@@ -15,8 +15,7 @@ module.exports = mongoose.model(
         default: "unreviewed",
       },
       identityNotes: String,
-      passwordHash: { type: String, required: function(){return !this.googleSubject;} },
-      googleSubject: {type:String,unique:true,sparse:true,maxlength:255},
+      passwordHash: { type: String, required: true },
       emailVerifiedAt: Date,
       sessionVersion: {type:Number,default:0},
       mfa: {

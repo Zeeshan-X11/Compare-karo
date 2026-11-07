@@ -1,6 +1,6 @@
 # Correction-pass file map
 
-This describes the production-readiness correction pass, not every difference from the original tutorial repository. The working tree already contained the Nestly portals and other pending changes. Existing work and legacy view deletions were preserved; this pass did not delete real accounts, listings, photos or documents.
+This describes the production-readiness correction pass, not every difference from the original tutorial repository. The working tree already contained the PG Dekho portals and other pending changes. Existing work and legacy view deletions were preserved; this pass did not delete real accounts, listings, photos or documents.
 
 | Files | Change and reason |
 | --- | --- |

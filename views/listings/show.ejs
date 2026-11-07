@@ -120,7 +120,7 @@
             <dt>Total reported move-in amount</dt><dd><strong><%= cost.total==null?'Cannot calculate a complete total yet':money(cost.total) %></strong></dd>
           </dl>
           <% if(cost.total==null){ %><p class="notice">Known charges total <%= money(cost.knownTotal) %>. Some charges are unconfirmed; ask the owner before paying.</p><% } %>
-          <p class="muted property-section-note">This is an estimate from the approved listing details. No payment or booking is taken by Nestly.</p>
+          <p class="muted property-section-note">This is an estimate from the approved listing details. No payment or booking is taken by PG Dekho.</p>
         </div>
       </section>
 
@@ -168,7 +168,7 @@
             <input type="hidden" name="_csrf" value="<%= csrf %>">
             <label>Message to the owner<textarea name="message" required minlength="10" maxlength="2000" placeholder="Ask about rent, rooms or a visit..."></textarea></label>
             <label>Preferred visit date (optional)<input type="date" name="preferredVisitDate"></label>
-            <p class="muted contact-privacy">Your name and account email will be shared with this property's owner. Your request will appear in their Nestly inbox.</p>
+            <p class="muted contact-privacy">Your name and account email will be shared with this property's owner. Your request will appear in their PG Dekho inbox.</p>
             <button class="button">Send inquiry / visit request →</button>
           </form>
         <% }else if(!user){ %>

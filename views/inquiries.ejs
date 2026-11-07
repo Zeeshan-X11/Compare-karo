@@ -6,7 +6,7 @@
     <a class="outline" href="/listings">Explore PGs <%- include('partials/icon',{name:'arrow'}) %></a>
   </header>
 
-  <% if(q.sent==='1'){ %><div class="notice notice-success" role="status">Your inquiry was saved to the owner's Nestly inbox. A visit is only confirmed when the owner agrees.</div><% } %>
+  <% if(q.sent==='1'){ %><div class="notice notice-success" role="status">Your inquiry was saved to the owner's PG Dekho inbox. A visit is only confirmed when the owner agrees.</div><% } %>
   <div class="student-body">
     <div class="student-toolbar"><div><h2>Conversation inbox</h2><p><%= inquiries.length %> <%= inquiries.length===1?'conversation':'conversations' %> on this page.</p></div><span class="student-guidance"><%- include('partials/icon',{name:'lock'}) %> Only your inquiries appear here</span></div>
     <% if(!inquiries.length){ %>

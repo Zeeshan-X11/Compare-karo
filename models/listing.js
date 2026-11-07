@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { localities } = require("../lib/localities");
+const { storedLocalities } = require("../lib/localities");
 const imageSchema = new mongoose.Schema({
   filename: String,
   thumbnail: String,
@@ -23,7 +23,7 @@ const listingSchema = new mongoose.Schema(
     country: String,
     name: { type: String, trim: true, maxlength: 120 },
     description: { type: String, maxlength: 4000 },
-    locality: { type: String, enum: localities },
+    locality: { type: String, enum: storedLocalities },
     address: { type: String, maxlength: 500 },
     monthlyRent: { type: Number, min: 0, default: null },
     securityDeposit: { type: Number, min: 0, default: null },

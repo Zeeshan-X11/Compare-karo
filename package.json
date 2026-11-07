@@ -1,5 +1,5 @@
 {
-  "name": "nestly",
+  "name": "pg-dekho",
   "version": "1.0.0",
   "description": "Authentic Bengaluru PG discovery and owner management",
   "main": "app.js",
@@ -29,7 +29,6 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.7.1",
     "express-session": "^1.19.0",
-    "google-auth-library": "^11.3.3",
     "helmet": "^8.3.0",
     "mongoose": "^7.5.2",
     "multer": "^2.5.0",

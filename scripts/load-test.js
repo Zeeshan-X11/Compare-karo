@@ -15,7 +15,7 @@ const {createApp}=require('../app'),Listing=require('../models/listing'),User=re
   const docs=await require('../lib/authorization').prepareAuthorization([{buffer:png,mimetype:'image/png'}],{authorizationDeclaration:'yes',authorizationType:'Trade licence'},owner._id,process.env.AUTHORIZATION_DIR,async()=>({status:'clean',engine:'TEST-ONLY',scannedAt:new Date()}));
   const records=[];
   for(let i=0;i<30;i++){
-   const l=new Listing({name:'TEST ONLY load property '+i,description:'Isolated load fixture, never real inventory. This complete test record exercises public browsing, search filters, image delivery and permitted student inquiries without touching any existing accounts or listings.',address:'TEST ONLY address with no real property',locality:i%2?'Yelahanka':'Rajajinagar',propertyCategory:'Men',monthlyRent:10000+i*100,securityDeposit:20000,oneTimeFee:0,sharingOptions:['Double'],roomOptions:[{sharing:'Double',monthlyRent:10000+i*100,totalRooms:5,availableRooms:2}],ownerId:owner._id,ownerAuthorized:true,contactName:'Test owner',contactPhone:'+919876501234',images:images.map(x=>({...x,status:'approved'})),authorizationDocuments:docs.map(d=>({...d,status:'accepted',reviewedBy:owner._id,reviewedAt:new Date()}))});
+   const l=new Listing({name:'TEST ONLY load property '+i,description:'Isolated load fixture, never real inventory. This complete test record exercises public browsing, search filters, image delivery and permitted student inquiries without touching any existing accounts or listings.',address:'TEST ONLY address with no real property',locality:'Rajanukunte',propertyCategory:'Men',monthlyRent:10000+i*100,securityDeposit:20000,oneTimeFee:0,sharingOptions:['Double'],roomOptions:[{sharing:'Double',monthlyRent:10000+i*100,totalRooms:5,availableRooms:2}],ownerId:owner._id,ownerAuthorized:true,contactName:'Test owner',contactPhone:'+919876501234',images:images.map(x=>({...x,status:'approved'})),authorizationDocuments:docs.map(d=>({...d,status:'accepted',reviewedBy:owner._id,reviewedAt:new Date()}))});
    publication.publish(l);records.push(await l.save());
   }
   await User.insertMany(Array.from({length:40},(_,i)=>({name:'TEST ONLY student '+i,email:'student'+i+'@load.invalid',role:'user',passwordHash:hash})));
@@ -36,7 +36,7 @@ const {createApp}=require('../app'),Listing=require('../models/listing'),User=re
    await hit(cookie,'/styles.css','asset');await hit(cookie,'/app.js','asset');
    for(let round=0;round<3;round++){
     const home=await hit(cookie,'/','browse'),token=home.match(/name="_csrf" value="([^"]+)"/)?.[1];
-    await hit(cookie,'/listings?area='+(i%2?'Yelahanka':'Rajajinagar')+'&maxRent=20000&sharing=Double&sort=rent-asc&page='+(round%2+1),'search');
+    await hit(cookie,'/listings?area='+'Rajanukunte'+'&maxRent=20000&sharing=Double&sort=rent-asc&page='+(round%2+1),'search');
     await hit(cookie,'/listings/'+records[i%records.length]._id,'detail');
     await hit(cookie,'/media/'+images[0].thumbnail,'thumbnail');await hit(cookie,'/media/'+images[0].filename,'photo');
     if(!token){errors.push({type:'csrf',status:'missing'});continue;}

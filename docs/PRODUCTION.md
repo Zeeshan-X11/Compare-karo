@@ -1,4 +1,4 @@
-# Nestly production deployment and operations
+# PG Dekho production deployment and operations
 
 This release keeps Express, EJS and MongoDB. It targets one Linux Docker host with durable filesystem volumes, MongoDB Atlas, Resend email, a private ClamAV sidecar and Caddy HTTPS. It has not been deployed to a paid host from this workspace. Provider accounts, DNS, credentials and real-data migration require the operator's setup and approval.
 
@@ -45,7 +45,7 @@ There is no SMS provider. Email ownership is verified; phone numbers are plausib
 
 ## Exact deployment sequence
 
-Run these steps only after provider setup, real-data preservation review and authorization for the host deployment. Use the reviewed Nestly checkout; do not copy `.env`, `work/`, test outputs or development databases into an image.
+Run these steps only after provider setup, real-data preservation review and authorization for the host deployment. Use the reviewed PG Dekho checkout; do not copy `.env`, `work/`, test outputs or development databases into an image.
 
 ```sh
 cp .env.example .env.production

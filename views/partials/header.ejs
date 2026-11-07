@@ -1,8 +1,10 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= title %> · Find your PG. Feel at home.</title><meta name="description" content="Find PG accommodation in <%= localities.join(", ") %>, Bengaluru. Compare details and connect with property owners."><meta name="theme-color" content="#2563eb"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/professional.css"><link rel="stylesheet" href="/inner.css"><script src="/property-wizard.js" defer></script><script src="/app.js" defer></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= title.replace(/Nestly/g, 'PG Dekho') %> · Find your PG. Feel at home.</title><meta name="description" content="Find PG accommodation in <%= localities.join(", ") %>, Bengaluru. Compare details and connect with property owners."><meta name="theme-color" content="#2563eb"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/professional.css"><link rel="stylesheet" href="/inner.css"><script src="/property-wizard.js" defer></script><script src="/app.js" defer></script></head>
 <body><a class="skip" href="#main">Skip to content</a>
 <header class="nav">
-  <a class="brand" href="<%= user?.role==='admin'?'/admin':user?.role==='owner'?'/owner':'/' %>" aria-label="Nestly home"><span class="brand-icon" aria-hidden="true">n</span><span>nestly<span class="brand-dot">.</span></span></a>
+  <a class="brand" href="<%= user?.role==='admin'?'/admin':user?.role==='owner'?'/owner':'/' %>" aria-label="PG Dekho home">
+    <img class="brand-logo" src="/pg-dekho-logo.png" width="1675" height="495" alt="PG Dekho">
+  </a>
   <button class="nav-toggle" aria-expanded="false" aria-controls="navigation"><%- include('icon',{name:'menu'}) %><span>Menu</span></button>
   <nav id="navigation" aria-label="Main navigation">
     <% if(user?.role==='owner'){ %>
@@ -21,7 +23,7 @@
     <% } %>
     <% if(user){ const roleName=user.role==='user'?'Student / seeker':user.role==='owner'?'PG owner':'Admin'; %>
       <details class="profile"><summary><span class="profile-avatar" aria-hidden="true"><%= user.name?.trim().charAt(0).toUpperCase()||'N' %></span><span class="profile-meta"><span><%= user.name %></span><small><%= roleName %></small></span><span class="profile-chevron" aria-hidden="true">⌄</span></summary>
-        <div><span class="account-role"><%= roleName %></span><a href="/account">My account</a><a href="/account/security">Account security</a>
+        <div><span class="account-role"><%= roleName %></span><a href="/account">My account</a><% if(user.role!=='user'){ %><a href="/account/security">Account security</a><% } %>
         <% if(user.role==='user'){ %><a href="/favorites">Saved PGs</a><a href="/compare">Compare PGs</a><a href="/inquiries">My inquiries</a><a href="/reports">My reports</a>
         <% }else if(user.role==='owner'){ %><a href="/owner">My properties</a><a href="/owner?tab=inquiries">Inquiry inbox</a><a href="/listings">Browse public website</a>
         <% }else if(user.role==='admin'){ %><a href="/admin">Admin review</a><a href="/admin/owners">Owner management</a><a href="/admin/directory">Public directory</a><a href="/listings">Preview public listings</a><a href="/owner">My own properties</a><% } %>

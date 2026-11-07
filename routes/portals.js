@@ -144,7 +144,7 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
               encodeURIComponent(
                 "Hello, I am interested in " +
                   listing.name +
-                  " on Nestly. Could you confirm room availability and rent?",
+                  " on PG Dekho. Could you confirm room availability and rent?",
               ),
       );
     }),

@@ -38,7 +38,7 @@
       <label>Legal / business property name<input name="name" required minlength="3" maxlength="120" value="<%= listing.name||'' %>"></label>
       <label>Description<textarea name="description" required minlength="80" maxlength="4000" aria-describedby="description-help"><%= listing.description||'' %></textarea><small id="description-help">Required for review: at least 80 characters and 12 words describing your PG.</small></label>
       <div class="two-cols">
-      <label>Locality<select name="locality" required><option value="">Choose locality</option><% for(const a of localities){ %><option <%= listing.locality===a?'selected':'' %>><%= a %></option><% } %></select></label>
+      <p class="muted">PG Dekho accepts properties in Rajanukunte, Bengaluru only. Enter the genuine street address; properties outside this area cannot be published.</p><label>Locality<select name="locality" required><option value="">Select Rajanukunte</option><% for(const a of localities){ %><option <%= listing.locality===a?'selected':'' %>><%= a %></option><% } %></select></label>
       <label>PG category<select name="propertyCategory" required><option value="">Choose category</option><% for(const c of ['Men','Women','Co-living']){ %><option <%= listing.propertyCategory===c?'selected':'' %>><%= c %></option><% } %></select></label></div>
       <label>Exact address<textarea name="address" required minlength="12" maxlength="500"><%= listing.address||'' %></textarea></label>
       <% if(hasLive(listing)){ %>
@@ -112,7 +112,7 @@
       <label>Issuing authority (if shown on the document)<input name="authorizationIssuer" maxlength="160" placeholder="Name of the issuing authority"></label>
       <label>Document / licence reference (optional)<input name="authorizationReference" maxlength="120"></label></div>
       <label class="photo-picker">Authorization files — PDF or scanned images<input type="file" name="authorizationFiles" accept="application/pdf,image/jpeg,image/png,image/webp" multiple data-preview="authorization-preview"><small>Required before submission. Up to 3 files in total, 4 MB each. PDFs must be unencrypted. Keep each upload batch below 23 MB; add remaining files in another save. Do not upload unrelated identity documents.</small><span id="authorization-preview" class="upload-previews"></span></label>
-      <label class="check"><input type="checkbox" name="authorizationDeclaration" value="yes">I am authorized to submit these genuine documents for this PG and permit Nestly admins to review them.</label>
+      <label class="check"><input type="checkbox" name="authorizationDeclaration" value="yes">I am authorized to submit these genuine documents for this PG and permit PG Dekho admins to review them.</label>
       <% if((listing.authorizationDocuments||[]).length){ %>
       <p>Saved documents appear below. Leave the file picker empty to keep them.</p>
       <% } %>

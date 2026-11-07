@@ -513,11 +513,7 @@
 }.public-preview-nav { min-height: 62px; font-size: 12px; color: #526f98; } .owner-portal .owner-workspace-nav + .portal-header { margin-top: 27px; } .owner-approval-guide { margin-top: 24px; }
 .owner-checklist summary { cursor: pointer; font-size: 11px; } .owner-checklist p { margin-top: 12px; } .contact-fine-print { border-top: 1px solid #e5ebf3; padding-top: 18px; margin-top: 20px; } .contact-fine-print p { font-size: 11px; }
 
-/* Google authentication stays within the existing account panels. */
-.google-signin{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:11px 18px;border:1px solid #747775;border-radius:8px;background:#fff;color:#1f1f1f;font-family:inherit;font-size:14px;font-weight:600;line-height:1.4;cursor:pointer;transition:background .15s,border-color .15s}
-.google-signin:hover:not(:disabled){background:#f8fafd;border-color:#444746}
-.google-signin:focus-visible{outline:3px solid #315f46;outline-offset:3px}
-.google-signin:disabled{background:#f5f5f3;color:#666861;cursor:not-allowed}
-.auth-help{font-size:12px;line-height:1.6;margin:10px 0 18px}
-.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#687065;font-size:12px}
-.auth-divider::before,.auth-divider::after{content:'';height:1px;background:#e4e7df;flex:1}
+
+/* Two-letter PG Dekho mark retains the existing brand shape and palette. */
+
+.directory-filter{flex-wrap:wrap}.directory-filter input{max-width:220px}.local-guide{margin-top:36px}.local-guide .directory-card{gap:10px}.localities .locality-grid:has(> :only-child){grid-template-columns:minmax(0,1fr)}

@@ -7,8 +7,9 @@ function registerDirectory({ app, auth, role, wrap }) {
   app.get('/directory/rajanukunte', wrap(async (req, res) => {
     const page = market.page(req.query.page);
     const category = directory.category(req.query.category);
-    const result = await directory.search(category, page);
-    res.render('directory', { ...result, category, page, pages: Math.ceil(result.total / 12),
+    const term = typeof req.query.q==='string'?req.query.q.trim().slice(0,80):'';
+    const result = await directory.search(category, page, 12, term);
+    res.render('directory', { ...result, category, term, page, pages: Math.ceil(result.total / 12),
       map: market.maps({ locality: 'Rajanukunte' }), title: 'Rajanukunte PG directory' });
   }));
   app.get('/admin/directory', auth, role(['admin']), wrap(async (req, res) => {
@@ -25,6 +26,7 @@ function registerDirectory({ app, auth, role, wrap }) {
     if (reason.length < 10 || reason.length > 500) throw problem(400, 'Explain this change in 10–500 characters.');
     const entry = await Entry.findOne({ slug: req.params.slug });
     if (!entry) throw problem(404, 'Directory entry not found.');
+    if(req.body.action==='show'&&!entry.inServiceArea)throw problem(400,'Only Rajanukunte entries can appear in the public directory.');
     const hidden = req.body.action === 'hide';
     await audit(req, 'directory.visibility', 'directory', entry._id, { hidden, reason });
     entry.hidden = hidden;

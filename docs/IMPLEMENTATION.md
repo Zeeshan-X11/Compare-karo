@@ -1,4 +1,4 @@
-# Nestly implementation plan and audit
+# PG Dekho implementation plan and audit
 
 Baseline: Node runtime checked locally; Express ^4.18.2, EJS ^3.1.9, Mongoose ^7.5.2. Four unstyled listing templates, one listing schema and inline CRUD routes. No authentication, sessions, validation middleware, upload service, review model, static assets, or deployment configuration. The original initializer deletes all listings before inserting holiday sample data.
 

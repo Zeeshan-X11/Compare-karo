@@ -1,6 +1,8 @@
-# Nestly
+# PG Dekho
 
-**Find your PG. Feel at home.** Express, EJS and MongoDB PG discovery and owner management, initially for Yelahanka and Rajajinagar, Bengaluru.
+The public brand is PG Dekho. Existing `nestly` database, session-cookie and Docker volume identifiers are retained for compatibility with existing accounts, backups and uploaded files.
+
+**Find your PG. Feel at home.** Express, EJS and MongoDB PG discovery and owner management, exclusively for Rajanukunte, Bengaluru.
 
 ## Run locally
 

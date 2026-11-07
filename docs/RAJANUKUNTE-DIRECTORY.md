@@ -1,79 +1,83 @@
-# Rajanukunte public directory and free maps
+# Rajanukunte-only PG Dekho
 
-Implemented 7 November 2026. This feature preserves Express/EJS, the existing brand, role separation and owner approval workflow.
+Updated 7 November 2026. Express, EJS, MongoDB, branding and existing portal layouts are retained.
 
-## What is public
+## Service area
 
-`/directory/rajanukunte` displays nine sourced entries: six described by their sources as Rajanukunte-area PGs and three explicitly labelled nearby (Dibbur or Shanubhoganahalli). All are labelled **Public directory · Unverified** and visible without owner/admin approval, as requested. Category filtering and pagination run against MongoDB. `/listings` and Rajanukunte search show a separate directory preview; owner-listed counts remain separate.
+Rajanukunte, Bengaluru is the only selectable and publicly discoverable locality. Home navigation, filters and owner submissions use the shared service-area list. Public property queries, detail pages and photo access check the approved snapshot's locality. Pending edits cannot move an out-of-area approved property into public results. Approved Rajanukunte snapshots remain visible during significant edits, subject to existing consent, suspension and publication rules.
 
-This is **not a complete census or a real-time availability feed**. Source pages were checked on 7 November 2026, but their underlying advertisements may be older. Rent, deposits, vacancies, ratings, precise coordinates and photos were deliberately not imported without confirmation/permission. Icons represent directory entries, not property photographs. Source pages provide further details; map links search by business name and address. Nestly inquiry/favorites/compare actions remain available on approved owner listings only.
+Yelahanka and Rajajinagar remain valid historical storage values so real records can still be inspected privately. They are not accepted by the owner input API or returned by public discovery. An explicit old-area filter returns no listings. No accounts, property records, photos or documents are deleted or relabelled.
 
-The catalog contains only factual business names, categories and broad location references. Sources:
+## Sourced directory
 
-- [Magicbricks: PGs near Presidency University](https://www.magicbricks.com/pg-near-presidency-university-in-bangalore-pppfr): Zolo Hercules, Anusha PG, Sapphire Ultra Luxury PG for Girls, Zesto Blue Pearl, Lifestyle PG for Ladies, Green View PG for Ladies and New NMR PG for Gents.
-- [Paying Guest in Bengaluru: Rajankunte Cross](https://www.payingguestinbengaluru.com/Rajankunte-Cross.html): Rudra Comforts.
-- [Venkateshwara PG for Girls](https://www.payingguestinbengaluru.com/Venkateshwara-PG-for-Girls-near-Presidency-University-College-Bangalore.html): Venkateshwara New Executive PG for Girls, Dibbur.
+The catalog has **13 eligible Rajanukunte entries and seven retained but excluded historical entries**. Public totals may be lower if an admin hides an entry. This is a sourced directory, not a complete census, independently surveyed boundary map, operator verification or live availability feed. Sources classify these addresses as Rajanukunte; visitors must confirm the actual location and operating status.
 
-## Storage and safe import
+| Entry | Public source |
+| --- | --- |
+| Lifestyle PG for Ladies | [Magicbricks Rajanukunte](https://www.magicbricks.com/pg-in-rajanukunte-bangalore-pppfr) |
+| New NMR PG for Gents | [Magicbricks Rajanukunte](https://www.magicbricks.com/pg-in-rajanukunte-bangalore-pppfr) |
+| Mars PG for Men | [Operator](https://marspg.in/) |
+| Mars Girls PG | [Operator's girls accommodation page](https://marspg.in/girls-pg-in-rajankunte-bangalore-mars-hostel-and-pg/) |
+| Sai Kiran PG for Boys | [Magicpin](https://magicpin.in/Bangalore/Rajanukunte/Hotel/Sai-Kiran-Pg-For-Boys/store/1c39394) |
+| M.S Girls PG | [Magicpin](https://magicpin.in/Bangalore/Rajanukunte/Hotel/M.s-Girls-Pg/store/190b543) |
+| Manju PG for Boys | [Find My Hostel](https://findmyhostel.in/hostel/bengaluru/chokkanahalli/Manju-PG-for-Boys-6a44f7cf39961b076a79a9c1) |
+| PVR Girls PG | [My Paying Guesto](https://mypayingguesto.com/bangalore/best-pg-in-bangalore/pvr-girls-pg/) |
+| VR Boys PG | [Magicbricks](https://www.magicbricks.com/propertyDetail/vr-boys-pg-rajanukunte-in-bangalore%26pgid%3D4d42353138383537677261646532) |
+| Study Home PG for Boys | [Magicbricks Rajanukunte](https://www.magicbricks.com/pg-in-rajanukunte-bangalore-pppfr) |
+| Stanza Living Albury House | [Operator](https://www.stanzaliving.com/bengaluru/pg-hotel-in-rajankunte/male/albury-house) |
+| Stanza Living Serov House | [Operator](https://www.stanzaliving.com/bengaluru/pg-hotel-in-rajankunte/female/serov-house) |
+| Stanza Living Watford House | [Operator](https://www.stanzaliving.com/bengaluru/pg-hotel-in-rajankunte/male/watford-house) |
 
-Source catalog: `data/rajanukunte-directory.json`. Model: `models/directory-entry.js`. Separate collection: `public_directory_entries`. No startup import and no updates to `users`, `listings`, photos, authorization documents or owner publication statuses.
+Source checks are dated 7 November 2026; the advertisements may be older. Selected advertised starting prices, sharing types, facilities and public business numbers are shown with explicit source/unconfirmed labels. Prices are not quotes or guaranteed all-inclusive costs. PVR rent is omitted because the source contains conflicting values. Unknown fields stay unknown. No ratings, reviews, stock property photos, precise pins, vacancies or owner accounts are invented. Separate male/female Mars entries follow the operator's separate accommodation pages and share its public business number.
 
-Use supported Node 22.23.4 or newer 22.x. From the app directory:
+The seven excluded historical entries are Zolo Hercules, Zesto Blue Pearl, Green View PG for Ladies, Anusha PG, Sapphire Ultra Luxury PG for Girls, Rudra Comforts and Venkateshwara New Executive PG for Girls. Their sources indicate another locality or do not establish a sufficiently clear Rajanukunte address. They remain in the catalog/database for moderation history, with `inServiceArea: false`. Admins cannot restore them to public visibility through the directory controls.
+
+Name/street search escapes regex input. Category filtering and 12-entry pagination run in MongoDB. Owner-listing budget/amenity filters are not applied or falsely advertised as applying to directory advertisements. Directory entries do not expose PG Dekho inquiry/favorite/compare actions because they are not owned, approved properties. A verified owner claim/deduplication workflow is not implemented.
+
+## Local guide and free maps
+
+The directory includes four official references:
+
+- [Presidency University](https://presidencyuniversity.in/contact).
+- [Sai Vidya Institute of Technology](https://www.saividya.ac.in/index.php/contact-us).
+- [Raksha Health Care](https://www.rakshahealth.in/contact); current services/hours must be confirmed.
+- [South Western Railway's Rajankunti station reference](https://swr.indianrailways.gov.in/uploads/files/1591161631577-HELPLINE%20NUMBERS.pdf), station code RNN. This is not a current timetable.
+
+OpenStreetMap renders the locality; [OSM relation 17417762](https://www.openstreetmap.org/relation/17417762) supplies the area bounds. Directory map links are name/address searches, not verified pins. Approved owner properties get a precise map only with reviewed coordinates and publication consent. No Google API key or billing is required; Google Maps links are ordinary external searches. OSM embeds retain attribution and lazy loading. Follow the [OSM usage policy](https://operations.osmfoundation.org/policies/tiles/); no SLA or unlimited capacity is promised.
+
+## Safe rollout
+
+Use Node 22.23.4 or newer 22.x. Set `MONGO_URL` to the explicitly authorized target. Tests must use disposable MongoDB, never the preview or production database.
 
 ```sh
-# Offline validation only; no database connection or writes.
+# Offline catalog validation; no writes or database required.
 npm run directory:sync
 
-# Set MONGO_URL to an explicitly authorized database, then:
-npm run directory:sync -- --apply
+# Read-only review of records which would be hidden.
+node scripts/focus-rajanukunte.js
+
+# Explicit visibility update + directory import, with verified logical backup.
+# The backup directory MUST be an absolute private directory outside the app.
+node scripts/focus-rajanukunte.js --apply --backup-dir=/private/backups/pg-dekho
 ```
 
-The apply command validates the entire catalog, creates declared directory indexes and upserts by unique slug. It never deletes rows. Re-running does not duplicate entries or reset admin hiding/reasons. Review updated sources before changing checkedAt; the date is a source check, not verification of the property. Take the usual backup before an import.
+On Windows, use an absolute private Windows path for `--backup-dir`. The migration snapshots directory records and the affected listings' visibility/locality metadata into an EJSON file, verifies a read-back, then hides out-of-area public records and imports the catalog by unique slug. It preserves existing moderation, is safe to rerun, and uses updatedAt guards to skip concurrent changes. Audits identify migration actions. It does not back up credentials or copy private documents; retain normal full database/storage backups separately. Writes are not transactional across the full procedure: if interrupted, preserve its backup and review the dry run before retrying. Concurrently changed records skipped by the optimistic guard require review on the next run.
 
-For the existing Docker deployment (service `app`), after rebuilding/redeploying the image with the catalog:
+After deployment/restart, the code independently enforces scope even if a visibility migration was not run. New directory records are intentionally default-excluded until explicitly reviewed in the source catalog. `npm run directory:sync -- --apply` refreshes source fields without resetting moderation. There is no startup scrape/import.
 
-```sh
-docker compose exec app npm run directory:sync
-docker compose exec app npm run directory:sync -- --apply
-```
+To roll back an accidental scope migration, first stop writes, review the private EJSON, and restore only the backed-up visibility/moderation/source fields for the affected IDs. Do not wholesale restore stale user/listing collections or overwrite subsequent edits. New directory slugs should be hidden rather than deleted. Re-enabling other service areas also requires an explicit code/policy change; a hidden flag alone cannot bypass the Rajanukunte guard.
 
-No new environment variables, paid accounts, Google API keys or runtime packages are required. Existing database, session and production configuration requirements remain. `npm run db:indexes` includes the directory indexes.
+For Docker, rebuild/redeploy, then run the scripts inside the app container with a private mounted backup directory outside `/app`. Existing Atlas/session/storage/email/MFA configuration requirements remain. No new paid service or environment variable is required for this change.
 
-## Moderation and privacy
+## Verification record
 
-Admins use `/admin/directory` to hide/restore entries with a 10–500 character reason. Authentication, admin role, production MFA and CSRF guards apply. Visibility changes append audit events. Public queries exclude hidden rows; HTML remains no-store. There is no public submission/import endpoint and no scrape-on-request behavior. Source links must be HTTPS URLs on the reviewed source host allowlist.
+- Full isolated regression suite: 81 passed, zero failed (7 November 2026). Initial network-blocked attempts and a stale test expectation were resolved before the passing run.
+- Lint passed; production validation build passed with 46 JavaScript sources and 36 EJS templates.
+- Local preview restarted on port 8080 with the existing durable database. A SHA-256 verified cold backup covered 87 files; a separate EJSON backup was read-back verified before the explicit visibility/import operation.
+- Local import inserted 11 new entries, refreshed nine existing source records, hid seven excluded directory entries and two out-of-area public owner listings. Public directory total: 13; stored directory total: 20.
+- Before/after preservation hashes matched for all ten user accounts and all four owner property records after excluding expected visibility, update timestamps, version counters and view statistics. No uploaded files were edited or deleted.
+- Live HTTP checks passed for home, listings, directory and Mars name search. Browser confirmed 13 entries, Mars search returning two, source labels and a 390px responsive layout with 375px content/client width and no horizontal overflow. Viewport override was reset. The latest map screenshot was blank, so current external tile rendering is not claimed as verified; a larger-map fallback remains available.
+- Test fixtures and load-test queries use Rajanukunte with explicit out-of-area negative cases. Scope migration tests cover approved snapshots, retained private records, moderator restrictions and idempotency.
+- No production database was touched. Complete neighborhood coverage, current rent/vacancies, surveyed boundaries and operator authenticity remain unverified. No external owner was contacted.
 
-Owner submissions still require the existing admin review. Public directory rows do not masquerade as owned, licensed, inspected or approved properties. A future owner claim process would need explicit verification and deduplication; it is not implemented here.
-
-## Maps
-
-`lib/maps.js` builds an OpenStreetMap iframe and ordinary Google Maps search links. The Rajanukunte area bounds come from [OSM relation 17417762](https://www.openstreetmap.org/relation/17417762), checked 6 November 2026. The area map has **no property pins**. It does not geocode every directory address or cover every nearby locality at its initial zoom.
-
-Approved owner property maps show a pin only for finite, in-range coordinates with both review and publication consent. Otherwise Rajanukunte uses the general area map; other localities retain their existing external locality links. Existing public snapshot/consent filtering remains in effect. CSP allows frames only from `https://www.openstreetmap.org`. Embeds are lazy-loaded, have descriptive titles, attribution and an external map fallback. The privacy page explains third-party requests.
-
-The [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/) governs usage: visible attribution, ordinary browser caching, no bulk prefetching and best-effort availability. No SLA is implied. Google links are ordinary searches, not paid API calls or verified map pins. An experimental Overpass lookup timed out; no results or complete/live coverage are claimed from it.
-
-## Verification
-
-- `npm test`: **77 passed, 0 failed** (7 November 2026); disposable MongoDB only. Includes seven new directory/map tests plus existing publication, consent, private documents and role tests.
-- `npm run lint`: passed.
-- `npm run build`: passed; 43 JavaScript files and 35 EJS templates validated.
-- Real preview: nine directory rows imported after a SHA-256-verified cold database backup. Before/after hashes of existing users and listings matched. No test records inserted into this database.
-- Browser: OSM tiles visibly render, category Women returns four real sourced entries, directory appears in Rajanukunte search, and 390px layout fits without horizontal overflow. No external owner has been contacted and no current vacancy or operator authenticity has been independently verified.
-- Browser moderation in a disposable database: admin hide changed the public count from nine to eight and removed the selected entry; restore returned it to Visible. No live directory row was hidden for testing. The final seven-test directory regression rerun also passed after the template refinements.
-- Production deployment, live provider availability, complete neighborhood coverage and map-provider load capacity are not established by these checks. See the existing production runbook for outstanding launch requirements.
-
-## Implementation files
-
-| Files | Purpose |
-| --- | --- |
-| `lib/localities.js`, `models/listing.js`, `lib/input.js`, `lib/filters.js` | Shared Rajanukunte locality in schemas, owner validation and search. |
-| `data/rajanukunte-directory.json`, `models/directory-entry.js`, `lib/directory.js` | Sourced catalog, distinct MongoDB collection, indexed queries and idempotent import. |
-| `scripts/sync-directory.js`, `scripts/ensure-indexes.js`, `package.json` | Explicit operator import and index commands. |
-| `routes/directory.js`, `app.js` | Public directory, admin moderation, role/CSRF guards, audit events, listings integration and OSM-only frame policy. |
-| `lib/maps.js`, `lib/marketplace.js` | Free embeds, map search links and reviewed/consented coordinate checks. |
-| `views/directory.ejs`, `views/admin-directory.ejs`, `views/partials/directory-cards.ejs`, `views/partials/map.ejs` | Directory, admin controls, source-labelled cards and accessible lazy map embeds. |
-| `views/listings/index.ejs`, `views/listings/show.ejs`, `views/listings/form.ejs`, `views/home.ejs`, `views/info.ejs` | Search/discovery, detail map, locality selection, home link and privacy/about disclosures. |
-| `views/partials/header.ejs`, `views/partials/footer.ejs`, `views/partials/search.ejs`, `views/admin.ejs`, `public/inner.css` | Navigation, role-appropriate access, responsive cards and existing visual style. |
-| `tests/directory.test.js`, `tests/workflows.test.js` | Directory/map regression coverage and Rajanukunte submission/filter coverage. |
-| `README.md`, `docs/RAJANUKUNTE-DIRECTORY.md` | Operator instructions, sources, limitations and test evidence. |
+Key files: `lib/localities.js`, `lib/filters.js`, `lib/publication.js`, `lib/service-area.js`, `lib/directory.js`, `models/listing.js`, `models/directory-entry.js`, `data/rajanukunte-directory.json`, `routes/directory.js`, `scripts/focus-rajanukunte.js`, `app.js`, the home/listing/directory EJS views and `tests/directory.test.js`.

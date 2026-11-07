@@ -6,7 +6,12 @@
     <h3><%= entry.name %></h3>
     <p class="directory-address"><%- include('icon',{name:'pin'}) %><span><%= entry.address %></span></p>
     <% if(entry.nearbyArea){ %><p class="directory-nearby">Nearby · <%= entry.nearbyArea %></p><% } %>
-    <p class="directory-unknown">Confirm rent, vacancies and facilities with the property.</p>
+    <% if(entry.advertisedRent!=null){ %><p><strong><%= money(entry.advertisedRent) %> / month onwards</strong><br><small>Advertised at source · Not a confirmed quote</small></p><% } %>
+    <% if(entry.sourceSharing?.length){ %><p>Source-listed sharing: <%= entry.sourceSharing.join(', ') %></p><% } %>
+    <% if(entry.sourceAmenities?.length){ %><details><summary>Facilities listed by source</summary><p><%= entry.sourceAmenities.join(' · ') %></p></details><% } %>
+    <% if(entry.sourceNote){ %><p class="muted"><%= entry.sourceNote %></p><% } %>
+    <% if(entry.sourcePhone){ %><p><a href="tel:<%= entry.sourcePhone %>">Call <%= entry.sourcePhone %></a><br><small>Public business number from source · Not verified by PG Dekho</small></p><% } %>
+    <p class="directory-unknown">Confirm exact location, rent, vacancies and facilities with the property.</p>
     <div class="directory-source">Source: <%= entry.sourceName %><br>Source checked <%= date(entry.checkedAt) %></div>
     <div class="directory-actions"><a class="button small" href="<%= entry.sourceUrl %>" target="_blank" rel="noopener noreferrer" aria-label="View source for <%= entry.name %>">Details at source ↗</a><a class="outline small" href="<%= entry.mapSearchUrl %>" target="_blank" rel="noopener noreferrer" aria-label="Search Google Maps for <%= entry.name %>">Find on Maps ↗</a></div>
   </article>

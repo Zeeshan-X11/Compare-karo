@@ -1,4 +1,4 @@
-name: Nestly validation
+name: PG Dekho validation
 on: [push, pull_request]
 permissions:
   contents: read

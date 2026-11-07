@@ -30,7 +30,7 @@ function registerSecurity({app,auth,wrap,emailTransport}){
     await Token.create({_id:tokenHash,userId:user._id,purpose,expiresAt:new Date(Date.now()+(purpose==='reset'?30:60)*60000)});
     try{
       const origin=process.env.APP_ORIGIN||'http://127.0.0.1:8080';
-      const result=await sendEmail({to:user.email,subject:purpose==='reset'?'Reset your Nestly password':'Verify your Nestly email',text:(purpose==='reset'?'Reset your password':'Verify your email address')+' using this one-time link:\n'+origin+(purpose==='reset'?'/reset-password':'/account/verify')+'#token='+token+'\nThis link expires in '+(purpose==='reset'?'30':'60')+' minutes. If you did not request it, ignore this message.'},emailTransport);
+      const result=await sendEmail({to:user.email,subject:purpose==='reset'?'Reset your PG Dekho password':'Verify your PG Dekho email',text:(purpose==='reset'?'Reset your password':'Verify your email address')+' using this one-time link:\n'+origin+(purpose==='reset'?'/reset-password':'/account/verify')+'#token='+token+'\nThis link expires in '+(purpose==='reset'?'30':'60')+' minutes. If you did not request it, ignore this message.'},emailTransport);
       if(!result?.id)throw problem(503,'Email delivery could not be confirmed.');
       await Delivery.updateOne({_id:result.id},{$set:{userId:user._id,purpose,updatedAt:new Date()},$setOnInsert:{status:'accepted'}},{upsert:true});
     }catch(error){await Token.deleteOne({_id:tokenHash});throw error;}
@@ -77,7 +77,7 @@ function registerSecurity({app,auth,wrap,emailTransport}){
     if(user.role!=='admin')throw problem(403,'Administrator access is required.');
     if(user.mfa.enabled)throw problem(400,'MFA is already enabled.');
     if(!user.emailVerifiedAt)throw problem(400,'Verify your email before enrolling administrator MFA.');
-    if(!user.passwordHash)throw problem(400,'Set a Nestly password through verified-email password recovery before enabling administrator MFA.');
+    if(!user.passwordHash)throw problem(400,'Set a PG Dekho password through verified-email password recovery before enabling administrator MFA.');
     if(!await bcrypt.compare(String(req.body.password||''),user.passwordHash))throw problem(403,'Your current password is incorrect.');
     const setup=mfa.setup(user.email);req.session.mfaSetup={encrypted:setup.encrypted,expiresAt:Date.now()+300000};
     res.render('security',{emailReady:emailConfigured(emailTransport),setup,recoveryCodes:null,delivery:null});

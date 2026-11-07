@@ -98,28 +98,12 @@ small {
   border-bottom: 1px solid var(--border);
 }
 .brand {
-  font-size: 30px;
-  letter-spacing: -1.6px;
-  font-weight: 800;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
 }
-.brand-icon {
-  display: inline-grid;
-  place-items: center;
-  color: white;
-  background: var(--blue);
-  border-radius: 12px;
-  width: 37px;
-  height: 37px;
-  line-height: 1;
-  transform: rotate(-6deg);
-  font-size: 30px;
-}
-.brand-dot {
-  color: var(--blue);
-  margin-left: -7px;
+.brand-logo {
+  display: block;
+  width: auto;
 }
 .nav nav {
   display: flex;

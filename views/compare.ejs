@@ -17,6 +17,41 @@
         <div class="actions"><a class="button" href="/listings">Explore PGs →</a><a class="quiet" href="/favorites">View saved PGs</a></div>
       </div>
     <% }else{ %>
+      <% if(listings.length >= 2){
+        const priced = listings.filter(l => l.monthlyRent != null);
+        const lowestRent = priced.length ? Math.min(...priced.map(l => l.monthlyRent)) : null;
+        const cheapest = priced.filter(l => l.monthlyRent === lowestRent);
+        const sharedAmenities = (listings[0].amenities || []).filter(amenity =>
+          listings.every(l => (l.amenities || []).includes(amenity)));
+      %>
+      <aside class="student-panel" aria-labelledby="compare-summary">
+        <span class="student-kicker">BASED ON LISTING DETAILS</span>
+        <h2 id="compare-summary">Quick comparison summary</h2>
+        <ul>
+          <% if(cheapest.length){ %>
+            <li><strong>Lowest listed starting rent:</strong> <%= cheapest.map(l => l.name).join(', ') %> at <%= money(lowestRent) %> per month.</li>
+          <% }else{ %>
+            <li>Starting rent is unconfirmed for all selected PGs.</li>
+          <% } %>
+          <% if(sharedAmenities.length){ %>
+            <li><strong>Facilities listed by all:</strong> <%= sharedAmenities.join(', ') %>.</li>
+          <% } %>
+          <% for(const listing of listings){
+            const lowestRoom = (listing.roomOptions || []).filter(room => room.monthlyRent != null)
+              .sort((a,b) => a.monthlyRent - b.monthlyRent)[0];
+            const total = market.moveIn(listing, lowestRoom?.sharing).total;
+            const uniqueAmenities = (listing.amenities || []).filter(amenity =>
+              listings.every(other => other === listing || !(other.amenities || []).includes(amenity)));
+          %>
+            <li><strong><%= listing.name %>:</strong>
+              <%= total == null ? 'Ask the owner for the full move-in cost.' : 'Listed move-in cost: ' + money(total) + (lowestRoom ? ' (' + lowestRoom.sharing + ' sharing).' : '.') %>
+              <% if(listing.monthlyRent == null && priced.length){ %>Starting rent is unconfirmed.<% } %>
+              <% if(uniqueAmenities.length){ %>Only this PG lists <%= uniqueAmenities.join(', ') %> among your selections.<% } %>
+            </li>
+          <% } %>
+        </ul>
+      </aside>
+      <% } %>
       <div class="table-scroll student-panel comparison-shell">
         <table class="data-table comparison">
           <caption class="sr-only">Side-by-side PG details and costs</caption>

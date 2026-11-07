@@ -20,9 +20,9 @@ a,button,input,select,textarea,summary { -webkit-tap-highlight-color: transparen
 .ui-icon { display: inline-block; vertical-align: middle; flex: 0 0 auto; }
 section { max-width: 1320px; padding: 52px 48px; }
 .nav { min-height: 78px; padding: 15px max(32px, calc((100vw - 1224px) / 2)); gap: 28px; position: relative; z-index: 30; }
-.brand { font-size: 28px; letter-spacing: -1.3px; gap: 9px; line-height: 1.1; white-space: nowrap; }
-.brand-icon { height: 34px; width: 34px; font-size: 27px; border-radius: 10px; box-shadow: 0 3px 8px #2563eb24; }
-.brand-dot { margin-left: 0; }
+/* The PNG includes white space around the artwork. Keep it inside the navbar padding. */
+.nav .brand { height: 34px; flex-shrink: 0; }
+.nav .brand-logo { height: 72px; margin-inline-start: -28px; }
 .nav nav { gap: 22px; font-size: 13px; }
 .nav-link { padding: 9px 0; position: relative; color: #58677b; white-space: nowrap; }
 .nav-link:hover,.nav-link[aria-current="page"] { color: var(--blue); }
@@ -236,7 +236,8 @@ input[type="file"]::file-selector-button { padding: 8px 12px; border: 1px solid 
 .inquiry form { margin-top: 18px; }
 .prose { padding-top: 48px; }
 footer { padding: 42px max(32px,calc((100vw - 1224px) / 2)); gap: 36px; font-size: 12px; }
-footer .brand { font-size: 27px; color: #263c5b; }
+footer .brand { height: 30px; }
+footer .brand-logo { height: 42px; margin-inline-start: -20px; }
 footer strong { color: #53677f; font-weight: 600; font-size: 11px; margin-bottom: 18px; }
 footer > div > a:not(.brand) { font-size: 11px; color: #8290a3; }
 footer > div > a:hover { color: var(--blue); }
@@ -277,8 +278,8 @@ footer > div > a:not(.brand) { color: #637188; }
   body { font-size: 14px; }
   section { padding: 34px 20px; }
   .nav { padding: 16px 20px; min-height: 72px; }
-  .brand { font-size: 26px; }
-  .brand-icon { width: 32px; height: 32px; font-size: 25px; }
+  .nav .brand { height: 32px; }
+  .nav .brand-logo { height: clamp(52px, 16vw, 62px); margin-inline-start: -20px; }
   .nav-toggle { display: inline-flex; gap: 8px; align-items: center; justify-content: center; min-height: 40px; padding: 8px 12px; border: 1px solid #dce4ef; border-radius: 7px; color: #4a5f7a; font-size: 12px; }
   .nav-toggle .ui-icon { width: 16px; height: 16px; }
   .nav nav { top: 100%; padding: 16px 20px 22px; font-size: 14px; gap: 9px; }

@@ -35,7 +35,7 @@ const details = {
   name: "FICTIONAL TEST PROPERTY — NOT REAL",
   description:
     "Automated test fixture, not a real PG and never production inventory. This isolated record exercises property validation, rent details, private document review and account permissions in a disposable test database.",
-  locality: "Yelahanka",
+  locality: "Rajanukunte",
   address: "TEST ONLY — NOT A REAL ADDRESS",
   monthlyRent: "12000",
   rentSingle: "12000",
@@ -141,7 +141,7 @@ test("empty homepage, navbar and search render without fake photos", async () =>
 });
 test("query filters whitelist values and reject operators", () => {
   const f = filters({
-    area: "Yelahanka",
+    area: "Rajanukunte",
     minRent: "5000",
     maxRent: "14000",
     sharing: "Double",
@@ -155,7 +155,7 @@ test("query filters whitelist values and reject operators", () => {
   assert.deepEqual(f.query.amenities, { $all: ["Wi-Fi", "Laundry"] });
   assert.throws(() => filters({ minRent: "{$gt:0}" }));
   assert.throws(() => filters({ minRent: "20", maxRent: "10" }));
-  assert.equal(filters({ area: { $ne: null } }).query.locality, undefined);
+  assert.equal(filters({ area: { $ne: null } }).query.locality, "Rajanukunte");
   assert.equal(filters({ area: " Rajanukunte " }).query.locality, "Rajanukunte");
   assert.equal(parseProperty({ locality: "Rajanukunte" }).locality, "Rajanukunte");
   assert.throws(() => parseProperty({ locality: "Unsupported test locality" }), { status: 400 });
@@ -302,7 +302,7 @@ test("admin approval immediately publishes a reviewed submission", async () => {
 });
 test("real database filtering and sorting for published inventory only", async () => {
   for (const [q, count] of [
-    ["area=Yelahanka", 1],
+    ["area=Rajanukunte", 1],
     ["area=Rajajinagar", 0],
     ["minRent=13000", 0],
     ["maxRent=13000", 1],

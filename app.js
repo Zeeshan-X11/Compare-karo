@@ -44,9 +44,6 @@ const wrap = (fn) => (req, res, next) =>
 function createApp(options = {}) {
   require('./lib/config').validateRuntime();
   const app = express();
-  if(options.googleProvider && process.env.NODE_ENV!=='test')throw Error('Google provider injection is only available in tests.');
-  const googleProvider = options.googleProvider || require('./lib/google-auth').provider();
-  app.locals.googleReady = Boolean(googleProvider);
   const production = process.env.NODE_ENV === "production";
   const renderReview = require('./lib/admin-review').reviewRenderer({production,documentScanner:options.documentScanner});
   const reviewAction = fn => wrap(async (req,res,next) => {
@@ -72,7 +69,7 @@ function createApp(options = {}) {
     amenities,
     sharing,
     localities,
-    title: "Nestly",
+    title: "PG Dekho",
     coverPhoto,
     submissionIssues,
     favoriteIds: new Set(),
@@ -110,7 +107,7 @@ function createApp(options = {}) {
           styleSrc: ["'self'"],
           imgSrc: ["'self'", "blob:"],
           frameSrc: ['https://www.openstreetmap.org'],
-          formAction: googleProvider ? ["'self'", 'https://accounts.google.com'] : ["'self'"],
+          formAction: ["'self'"],
           upgradeInsecureRequests: production ? [] : null,
         },
       },
@@ -154,7 +151,7 @@ function createApp(options = {}) {
       res.set('Cache-Control','private, no-store');
       req.user = req.session.userId
         ? await User.findById(req.session.userId).select(
-            "name email role favorites suspended suspensionReason sessionVersion emailVerifiedAt mfa.enabled googleSubject",
+            "name email role favorites suspended suspensionReason sessionVersion emailVerifiedAt mfa.enabled",
           )
         : null;
       if (req.user || req.session.pendingMfaUserId || /^\/(login|signup|account|owner|admin|inquiries|favorites|compare|reports|reset-password|forgot-password|mfa)/.test(req.path)) res.set('Cache-Control','private, no-store');
@@ -184,7 +181,7 @@ function createApp(options = {}) {
           : "₹" + Number(v).toLocaleString("en-IN");
       res.locals.date = (v) =>
         v ? new Date(v).toLocaleDateString("en-IN") : "Not confirmed";
-      res.locals.title = "Nestly";
+      res.locals.title = "PG Dekho";
       if (
         !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
         req.get("x-csrf-token") !== req.session.csrf &&
@@ -209,7 +206,6 @@ function createApp(options = {}) {
     next();
   };
   require('./routes/security').registerSecurity({app,auth,wrap,emailTransport:options.emailTransport});
-  require('./routes/google-auth').registerGoogle({app,auth,wrap,provider:googleProvider});
   require('./routes/directory').registerDirectory({app,auth,role,wrap});
   app.param("id", (req, res, next, id) =>
     mongoose.isValidObjectId(id)
@@ -445,7 +441,7 @@ function createApp(options = {}) {
         _id: { $in: listings.map((l) => l._id) },
       })
         .select(
-          "authorizationDocuments.declaration publicSnapshot.listingStatus publicSnapshot.publicationPolicyVersion publicHidden ownerSuspended",
+          "authorizationDocuments.declaration publicSnapshot.listingStatus publicSnapshot.locality publicSnapshot.publicationPolicyVersion publicHidden ownerSuspended",
         )
         .lean();
       const byId = new Map(summaries.map((l) => [String(l._id), l]));
@@ -750,7 +746,7 @@ function createApp(options = {}) {
           { "publicSnapshot.images.filename": req.params.filename },
         ],
       }).select(
-        "ownerId images publicSnapshot.images publicSnapshot.listingStatus publicSnapshot.publicationPolicyVersion publicationPolicyVersion listingStatus publicHidden ownerSuspended",
+        "locality ownerId images publicSnapshot.images publicSnapshot.listingStatus publicSnapshot.locality publicSnapshot.publicationPolicyVersion publicationPolicyVersion listingStatus publicHidden ownerSuspended",
       );
       if (!l) return res.sendStatus(404);
       const img = l.images.find((i) => (i.filename === req.params.filename || i.thumbnail === req.params.filename));
@@ -844,7 +840,7 @@ function createApp(options = {}) {
         Listing.find(query)
           .populate("ownerId", "name email")
           .select(
-            "name locality listingStatus submittedAt updatedAt images._id authorizationDocuments._id reports.status publicSnapshot.listingStatus publicSnapshot.publicationPolicyVersion publicationPolicyVersion publicHidden ownerSuspended",
+            "name locality listingStatus submittedAt updatedAt images._id authorizationDocuments._id reports.status publicSnapshot.listingStatus publicSnapshot.locality publicSnapshot.publicationPolicyVersion publicationPolicyVersion publicHidden ownerSuspended",
           )
           .sort({ submittedAt: -1, updatedAt: -1 })
           .skip((page - 1) * 12)
@@ -1216,7 +1212,7 @@ if (require.main === module) {
       await require('./lib/health').readiness();
       const app = createApp();
       const server = app.listen(process.env.PORT || 8080, () =>
-        console.log("Nestly listening on " + (process.env.PORT || 8080)),
+        console.log("PG Dekho listening on " + (process.env.PORT || 8080)),
       );
       let closing=false;
       const stop=()=>{if(closing)return;closing=true;const timer=setTimeout(()=>process.exit(1),20000);timer.unref();server.close(async()=>{try{if(app.locals.sessionStore)await app.locals.sessionStore.close();await mongoose.disconnect();clearTimeout(timer);process.exit(0);}catch{process.exit(1);}});};
