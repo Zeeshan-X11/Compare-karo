@@ -1,0 +1,21 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs/promises'),path=require('path'),crypto=require('crypto'),net=require('net');
+process.env.NODE_ENV='test';
+test('unsupported Node versions fail before application startup',()=>{const {validateRuntime}=require('../lib/config');assert.throws(()=>validateRuntime('22.12.0'),/22.23.4/);assert.throws(()=>validateRuntime('20.19.0'),/22.23.4/);assert.doesNotThrow(()=>validateRuntime('22.23.4'));assert.doesNotThrow(()=>validateRuntime('22.24.0'));});
+test('backup verification detects corruption and restore guards refuse non-isolated targets',async()=>{
+  const root=path.resolve(__dirname,'../../work/backup-unit-'+crypto.randomUUID());await fs.mkdir(root,{recursive:true});
+  const files=[];for(const name of ['database.archive.gz','photos.tar.gz','documents.tar.gz']){const bytes=Buffer.from('ISOLATED TEST ARCHIVE '+name);await fs.writeFile(path.join(root,name),bytes);files.push({name,sha256:crypto.createHash('sha256').update(bytes).digest('hex')});}
+  await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify({version:1,files}));
+  const {verifyBackup}=require('../scripts/verify-backup');assert.equal(await verifyBackup(root),true);
+  await fs.appendFile(path.join(root,'photos.tar.gz'),'corrupted');await assert.rejects(()=>verifyBackup(root),/checksum failed/);
+  const {validateTarget}=require('../scripts/restore-backup');assert.throws(()=>validateTarget('mongodb://127.0.0.1/nestly',root),/_restore_test/);assert.throws(()=>validateTarget('mongodb://127.0.0.1/new_restore_test','relative'),/absolute/);assert.equal(validateTarget('mongodb://127.0.0.1/new_restore_test',root),'new_restore_test');
+});
+test('ClamAV INSTREAM client handles clean, infected, stale and unavailable scanner protocol states',async()=>{
+  const oldHost=process.env.CLAMD_HOST,oldPort=process.env.CLAMD_PORT;let stale=false;
+  const server=net.createServer(socket=>{let data=Buffer.alloc(0);socket.on('data',chunk=>{data=Buffer.concat([data,chunk]);if(data.subarray(0,9).toString()==='zVERSION\0'){socket.end('ClamAV TEST-ONLY/123/'+(stale?'Tue Jan 01 00:00:00 2000':new Date().toUTCString())+'\0');return;}if(data.subarray(0,10).toString()!=='zINSTREAM\0')return;let offset=10;const chunks=[];while(data.length>=offset+4){const size=data.readUInt32BE(offset);if(size===0){const bytes=Buffer.concat(chunks);socket.end(bytes.toString().includes('EICAR-PROTOCOL-FIXTURE')?'stream: TEST-SIGNATURE FOUND\0':'stream: OK\0');return;}if(data.length<offset+4+size)return;chunks.push(data.subarray(offset+4,offset+4+size));offset+=4+size;}});});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));process.env.CLAMD_HOST='127.0.0.1';process.env.CLAMD_PORT=String(server.address().port);
+  try{const {scanDocument}=require('../lib/scanner');assert.equal((await scanDocument(Buffer.from('safe protocol fixture'))).status,'clean');await assert.rejects(()=>scanDocument(Buffer.from('EICAR-PROTOCOL-FIXTURE')),/scanner rejected/);stale=true;await assert.rejects(()=>scanDocument(Buffer.from('safe')),/definitions need updating/);}finally{await new Promise(r=>server.close(r));process.env.CLAMD_HOST=oldHost||'';process.env.CLAMD_PORT=oldPort||'';}
+});
+test('production configuration never accepts insecure MongoDB transport',()=>{
+  const env={NODE_ENV:'production',MONGO_URL:'mongodb+srv://example.invalid/nestly?tlsInsecure=true',SESSION_SECRET:'x'.repeat(48),APP_ORIGIN:'https://example.invalid',MFA_ENCRYPTION_KEY:Buffer.alloc(32,9).toString('base64'),RESEND_API_KEY:'test-only',EMAIL_FROM:'test@example.invalid',EMAIL_WEBHOOK_SECRET:'test-only',UPLOAD_DIR:path.resolve('work/photos'),AUTHORIZATION_DIR:path.resolve('work/documents'),CLAMD_HOST:'scanner',STORAGE_DURABLE:'true'};
+  assert.throws(()=>require('../lib/config').validateEnvironment(env),/transport security/);
+});

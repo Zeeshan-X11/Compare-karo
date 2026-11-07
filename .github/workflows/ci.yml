@@ -1,0 +1,32 @@
+name: Nestly validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Validate Docker deployment definition and build
+        run: |
+          cp .env.example .env.production
+          docker compose config --quiet
+          docker build -t nestly:ci .
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run test:load
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: isolated-load-results
+          path: work/load-test-results.json

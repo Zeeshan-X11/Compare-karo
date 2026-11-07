@@ -1,18 +1,51 @@
 {
-  "name": "majorproject",
+  "name": "nestly",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Authentic Bengaluru PG discovery and owner management",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "admin:promote": "node scripts/promote-admin.js",
+    "build": "node scripts/build.js",
+    "test:load": "node scripts/load-test.js",
+    "lint": "eslint app.js lib models routes scripts public tests eslint.config.js",
+    "listings:audit": "node scripts/review-legacy.js",
+    "directory:sync": "node scripts/sync-directory.js",
+    "db:indexes": "node scripts/ensure-indexes.js",
+    "backup:verify": "node scripts/verify-backup.js",
+    "backup:restore-test": "node scripts/restore-backup.js",
+    "test:restore": "node scripts/test-restore.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^18.0.9",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
-    "method-override": "^3.0.0",
-    "mongoose": "^7.5.2"
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "google-auth-library": "^11.3.3",
+    "helmet": "^8.3.0",
+    "mongoose": "^7.5.2",
+    "multer": "^2.5.0",
+    "otpauth": "^9.5.2",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.5",
+    "svix": "^2.9.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=22.23.4 <23"
   }
 }

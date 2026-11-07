@@ -1,0 +1,193 @@
+<%- include('../partials/header') %>
+<section class="owner-wizard-page">
+  <a class="quiet owner-wizard-back-link" href="/owner">← Owner dashboard</a>
+  <header class="section-heading portal-header owner-wizard-header">
+    <div>
+      <span class="eyebrow">OWNER SPACE</span>
+      <h1><%= listing._id?'Edit your PG':'Introduce your PG' %></h1>
+      <p>Complete your listing in five steps. Save a draft any time, or submit it for admin approval when it is ready.</p>
+    </div>
+    <span class="badge"><%= publicationState(listing) %></span>
+  </header>
+  <% if(listing.moderationNotes){ %><div class="notice">Review notes: <%= listing.moderationNotes %></div><% } %>
+  <form class="panel property-form property-upload owner-wizard-form" data-property-wizard data-token="<%= csrf %>" data-existing="<%= (listing.images||[]).length %>" data-existing-documents="<%= (listing.authorizationDocuments||[]).length %>" method="post" action="<%= listing._id?'/owner/'+listing._id:'/owner' %>">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <nav class="owner-stepper" aria-label="PG listing steps">
+      <button type="button" data-step-target="0" aria-controls="owner-step-0"><span class="owner-step-number" aria-hidden="true">1</span><span class="owner-step-label">Property basics</span></button>
+      <button type="button" data-step-target="1" aria-controls="owner-step-1"><span class="owner-step-number" aria-hidden="true">2</span><span class="owner-step-label">Rent & facilities</span></button>
+      <button type="button" data-step-target="2" aria-controls="owner-step-2"><span class="owner-step-number" aria-hidden="true">3</span><span class="owner-step-label">Photos</span></button>
+      <button type="button" data-step-target="3" aria-controls="owner-step-3"><span class="owner-step-number" aria-hidden="true">4</span><span class="owner-step-label">Documents</span></button>
+      <button type="button" data-step-target="4" aria-controls="owner-step-4"><span class="owner-step-number" aria-hidden="true">5</span><span class="owner-step-label">Contact & review</span></button>
+    </nav>
+    <p class="owner-step-status" data-step-status aria-live="polite"></p>
+    <% if(typeof errorMessage!=='undefined'){ %>
+    <p class="notice" role="alert"><%= errorMessage %> Please reselect any new photos before saving again.</p>
+    <% } if(q.saved==='1'){ %>
+    <p class="notice" role="status"><%= hasLive(listing)?'Changes saved as a private draft. Your previous approved version remains live.':'Draft saved. Add your photos and submit when ready. This PG has not been sent to admin and is not public yet.' %></p>
+    <% } %>
+    <% const pendingIssues=listing._id&&listing.listingStatus!=='submitted'?submissionIssues(listing):[]; if(q.incomplete==='1'||pendingIssues.length){ %>
+    <details class="notice owner-checklist" <%= q.incomplete==='1'?'open':'' %>><summary><strong>Your PG is saved, but has NOT been sent to admin.</strong> View <%= pendingIssues.length %> items to complete.</summary>
+    <p>Complete these items, then submit again:</p><ul><% for(const issue of pendingIssues){ %><li><%= issue %></li><% } %></ul></details>
+    <% } %>
+
+    <section class="owner-form-step" data-step="0" id="owner-step-0" aria-labelledby="owner-step-0-title">
+      <header class="owner-form-step-heading">
+        <h2 id="owner-step-0-title" tabindex="-1">Property basics</h2>
+        <p>Tell students what kind of PG you offer and where they can find it.</p>
+      </header>
+      <label>Legal / business property name<input name="name" required minlength="3" maxlength="120" value="<%= listing.name||'' %>"></label>
+      <label>Description<textarea name="description" required minlength="80" maxlength="4000" aria-describedby="description-help"><%= listing.description||'' %></textarea><small id="description-help">Required for review: at least 80 characters and 12 words describing your PG.</small></label>
+      <div class="two-cols">
+      <label>Locality<select name="locality" required><option value="">Choose locality</option><% for(const a of localities){ %><option <%= listing.locality===a?'selected':'' %>><%= a %></option><% } %></select></label>
+      <label>PG category<select name="propertyCategory" required><option value="">Choose category</option><% for(const c of ['Men','Women','Co-living']){ %><option <%= listing.propertyCategory===c?'selected':'' %>><%= c %></option><% } %></select></label></div>
+      <label>Exact address<textarea name="address" required minlength="12" maxlength="500"><%= listing.address||'' %></textarea></label>
+      <% if(hasLive(listing)){ %>
+      <div class="notice">An approved version of this PG remains visible. These edits are private until the admin approves this revision.</div>
+      <% } %>
+    </section>
+
+    <section class="owner-form-step" data-step="1" id="owner-step-1" aria-labelledby="owner-step-1-title">
+      <header class="owner-form-step-heading">
+        <h2 id="owner-step-1-title" tabindex="-1">Rent & facilities</h2>
+      </header>
+      <p class="muted">Enter the actual monthly rent and room counts for each sharing type you offer. Blank availability means unconfirmed; zero means no rooms available.</p>
+      <div class="table-scroll">
+      <table class="data-table">
+      <thead>
+      <tr><th>Sharing</th><th>Monthly rent (₹)</th><th>Total rooms</th><th>Available rooms</th></tr></thead>
+      <tbody><% for(const type of sharing){const key=type==='Four+'?'FourPlus':type;const room=(listing.roomOptions||[]).find(r=>r.sharing===type)||{}; %>
+      <tr><th><%= type %></th><td>
+      <label class="sr-only" for="rent-<%= key %>"><%= type %> sharing monthly rent</label><input id="rent-<%= key %>" name="rent<%= key %>" type="number" min="2000" max="100000" value="<%= room.monthlyRent==null?'':room.monthlyRent %>"></td><td>
+      <label class="sr-only" for="total-<%= key %>"><%= type %> total rooms</label><input id="total-<%= key %>" name="roomsTotal<%= key %>" type="number" min="0" max="500" value="<%= room.totalRooms==null?'':room.totalRooms %>"></td><td>
+      <label class="sr-only" for="available-<%= key %>"><%= type %> available rooms</label><input id="available-<%= key %>" name="roomsAvailable<%= key %>" type="number" min="0" max="500" value="<%= room.availableRooms==null?'':room.availableRooms %>"></td></tr><% } %></tbody></table></div>
+      <div class="two-cols"><% for(const [key,label] of [['monthlyRent','Starting monthly rent (₹)'],['securityDeposit','Security deposit (₹)']]){ %>
+      <label><%= label %><input type="number" name="<%= key %>" min="0" max="9999999" value="<%= listing[key]==null?'':listing[key] %>"><small><%= key==='monthlyRent'?'Automatically uses the lowest rent among selected sharing options when supplied.':'Leave blank if unconfirmed.' %></small></label>
+      <% } %></div>
+      <fieldset><legend>Sharing options</legend>
+      <div class="checkboxes"><% for(const s of sharing){ %>
+      <label><input type="checkbox" name="sharingOptions" value="<%= s %>" <%= listing.sharingOptions.includes(s)?'checked':'' %>><%= s %></label>
+      <% } %></div></fieldset>
+      <details class="owner-form-group"><summary>Facilities, meals & house rules <span>Optional details</span></summary>
+      <fieldset><legend>Confirmed amenities only</legend>
+      <div class="checkboxes"><% for(const a of amenities){ %>
+      <label><input type="checkbox" name="amenities" value="<%= a %>" <%= listing.amenities.includes(a)?'checked':'' %>><%= a %></label>
+      <% } %></div></fieldset>
+      <fieldset><legend>Meals offered (confirm charges with owner)</legend>
+      <div class="checkboxes"><% for(const f of ['Breakfast','Lunch','Dinner']){ %>
+      <label><input type="checkbox" name="foodOptions" value="<%= f %>" <%= listing.foodOptions.includes(f)?'checked':'' %>><%= f %></label>
+      <% } %></div></fieldset>
+      <label>Meals included in rent?<select name="foodIncluded"><option value="">Not confirmed</option><option value="yes" <%= listing.foodIncluded===true?'selected':'' %>>Yes, included</option><option value="no" <%= listing.foodIncluded===false?'selected':'' %>>No, charged separately</option></select></label>
+      <label>Other one-time move-in charges (₹)<input type="number" name="oneTimeFee" min="0" max="1000000" value="<%= listing.oneTimeFee==null?'':listing.oneTimeFee %>"><small>Enter 0 only if you confirm there are none. Leave blank if unconfirmed.</small></label>
+      <label>House rules<textarea name="houseRules" maxlength="2000"><%= listing.houseRules||'' %></textarea></label>
+      </details>
+      <details class="owner-form-group"><summary>Availability & confirmation <span>Room status and dates</span></summary>
+      <label>Availability<select name="availabilityStatus"><% for(const a of ['unknown','available','unavailable']){ %><option <%= listing.availabilityStatus===a?'selected':'' %>><%= a %></option><% } %></select></label>
+      <div class="two-cols"><% for(const [key,label] of [['availabilityConfirmedAt','Availability last confirmed'],['priceConfirmedAt','Price last confirmed']]){ %>
+      <label><%= label %><input type="date" name="<%= key %>" value="<%= listing[key]?new Date(listing[key]).toISOString().slice(0,10):'' %>"></label>
+      <% } %></div>
+      </details>
+    </section>
+
+    <section class="owner-form-step" data-step="2" id="owner-step-2" aria-labelledby="owner-step-2-title">
+      <header class="owner-form-step-heading">
+        <h2 id="owner-step-2-title" tabindex="-1">Property photos</h2>
+      </header>
+      <p>Your building photo will appear on the website card. Room and facility photos will appear in the full gallery after admin approval.</p>
+      <div class="two-cols">
+      <label class="photo-picker">Main building / exterior photo<input type="file" name="buildingPhoto" accept="image/jpeg,image/png,image/webp" data-preview="building-preview"><small>Choose one genuine building photo. Required before submission.</small><span id="building-preview" class="upload-previews"></span></label>
+      <label class="photo-picker">Room, bathroom & facility photos<input type="file" name="galleryPhotos" accept="image/jpeg,image/png,image/webp" multiple data-preview="gallery-preview"><small>Select up to 11 photos together. Maximum 12 photos in total, 4 MB each.</small><span id="gallery-preview" class="upload-previews"></span></label></div>
+      <label class="check"><input type="checkbox" name="photoRights" value="yes">I have permission from the rights holder to publish every photograph selected above.</label>
+      <noscript>
+      <p class="notice">JavaScript is needed to upload photos securely. You can save details as a draft without photos.</p></noscript>
+    </section>
+
+    <section class="owner-form-step" data-step="3" id="owner-step-3" aria-labelledby="owner-step-3-title">
+      <header class="owner-form-step-heading">
+        <h2 id="owner-step-3-title" tabindex="-1">PG operation authorization</h2>
+      </header>
+      <p>Upload documents supporting your authority to operate this PG, such as a licence, registration certificate or permission document. The admin reviews these privately before approving your listing.</p>
+      <p class="muted">Your documents are private. They are checked for file safety, then reviewed by an admin. Uploading a file does not verify permission to operate the PG.</p>
+      <label>Authorization document type<select name="authorizationType"><% for(const type of authorizationTypes){ %><option><%= type %></option><% } %></select></label>
+      <div class="two-cols">
+      <label>Issuing authority (if shown on the document)<input name="authorizationIssuer" maxlength="160" placeholder="Name of the issuing authority"></label>
+      <label>Document / licence reference (optional)<input name="authorizationReference" maxlength="120"></label></div>
+      <label class="photo-picker">Authorization files — PDF or scanned images<input type="file" name="authorizationFiles" accept="application/pdf,image/jpeg,image/png,image/webp" multiple data-preview="authorization-preview"><small>Required before submission. Up to 3 files in total, 4 MB each. PDFs must be unencrypted. Keep each upload batch below 23 MB; add remaining files in another save. Do not upload unrelated identity documents.</small><span id="authorization-preview" class="upload-previews"></span></label>
+      <label class="check"><input type="checkbox" name="authorizationDeclaration" value="yes">I am authorized to submit these genuine documents for this PG and permit Nestly admins to review them.</label>
+      <% if((listing.authorizationDocuments||[]).length){ %>
+      <p>Saved documents appear below. Leave the file picker empty to keep them.</p>
+      <% } %>
+    </section>
+
+    <section class="owner-form-step" data-step="4" id="owner-step-4" aria-labelledby="owner-step-4-title">
+      <header class="owner-form-step-heading">
+        <h2 id="owner-step-4-title" tabindex="-1">Contact & review</h2>
+        <p>Add the contact details and publication permissions for this PG.</p>
+      </header>
+      <div class="two-cols">
+      <label>Owner / authorized contact name<input name="contactName" required maxlength="80" value="<%= listing.contactName||'' %>"></label>
+      <label>Owner contact number<input name="contactPhone" required maxlength="20" value="<%= listing.contactPhone||'' %>"></label></div>
+      <label class="check"><input type="checkbox" name="contactPublic" value="yes" <%= listing.contactPublic?'checked':'' %>>I authorize public display of this contact name and phone.</label>
+      <label class="check"><input type="checkbox" name="whatsappAllowed" value="yes" <%= listing.whatsappAllowed?'checked':'' %>>I authorize WhatsApp inquiries on the contact number above (requires public contact permission).</label>
+      <details class="owner-form-group"><summary>Map location & source <span>Optional details</span></summary>
+      <p class="muted">Optional exact coordinates. The admin must review them before an exact Google Maps link is published. Otherwise visitors see a locality-only map.</p>
+      <div class="two-cols">
+      <label>Latitude<input name="coordinateLatitude" type="number" step="any" min="-90" max="90" value="<%= listing.coordinates?.latitude==null?'':listing.coordinates.latitude %>"></label>
+      <label>Longitude<input name="coordinateLongitude" type="number" step="any" min="-180" max="180" value="<%= listing.coordinates?.longitude==null?'':listing.coordinates.longitude %>"></label></div>
+      <label class="check"><input type="checkbox" name="locationPublic" value="yes" <%= listing.coordinates?.publicationAuthorized?'checked':'' %>>I authorize publication of these exact property coordinates after admin review.</label>
+      <label>Source URL, if available<input type="url" name="sourceUrl" value="<%= listing.sourceUrl||'' %>"></label>
+      <label>Source date<input type="date" name="sourceDate" value="<%= listing.sourceDate?new Date(listing.sourceDate).toISOString().slice(0,10):'' %>"></label>
+      </details>
+      <label class="check"><input type="checkbox" name="ownerAuthorized" value="yes" required <%= listing.ownerAuthorized?'checked':'' %>>I am the owner or authorized representative and authorize publication of these accurate details.</label>
+    </section>
+
+    <div class="owner-wizard-footer">
+      <div class="notice">Significant changes need admin review. If an approved version exists, it remains publicly visible while these changes are pending. Save draft keeps only the new changes private.</div>
+      <p class="upload-status" role="status" aria-live="polite"></p>
+      <div class="actions owner-wizard-actions">
+        <div class="actions owner-wizard-buttons">
+          <button type="button" class="outline" data-step-back hidden>← Back</button>
+          <button type="button" class="button" data-step-next hidden>Continue →</button>
+          <button type="submit" class="button" data-step-submit name="intent" value="submit">Submit PG for admin approval →</button>
+        </div>
+        <button type="submit" class="outline" name="intent" value="draft" formnovalidate>Save draft — do not send yet</button>
+      </div>
+      <p class="muted owner-wizard-hint">Submitting saves your details and selected photos together. Your PG becomes visible only after an admin reviews and approves it.</p>
+    </div>
+  </form>
+
+  <% if(listing._id&&(listing.images||[]).length){ %>
+    <details class="panel saved-material">
+      <summary>Saved property photos (<%= listing.images.length %> / 12)</summary>
+      <div class="saved-material-body">
+        <p>The approved building / exterior photo is used as the card cover. All approved photos appear on the PG detail page.</p>
+        <div class="gallery"><% for(const img of listing.images){ %>
+        <div><a href="/media/<%= img.filename %>" target="_blank" rel="noopener"><img src="/media/<%= img.filename %>" alt="<%= img.type %>" loading="lazy"></a>
+        <p><%= img.type==='Exterior'?'Building / exterior':img.type %> · <%= img.status %></p>
+        <form method="post" action="/owner/<%= listing._id %>/photos/<%= img._id %>/manage"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label>Photo type<select name="type"><% for(const type of photoTypes){ %><option <%= type===img.type?'selected':'' %>><%= type %></option><% } %></select></label>
+        <label class="check"><input type="checkbox" name="cover" value="yes" <%= String(listing.coverImageId)===String(img._id)?'checked':'' %>>Use as building cover (exterior only)</label><button class="outline small">Save photo details</button></form>
+        <form method="post" action="/owner/<%= listing._id %>/photos/<%= img._id %>/delete"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="outline small">Remove photo</button></form></div>
+        <% } %></div>
+      </div>
+    </details>
+  <% } %>
+
+  <% if(listing._id&&(listing.authorizationDocuments||[]).length){ %>
+    <details class="panel saved-material">
+      <summary>Private authorization documents (<%= listing.authorizationDocuments.length %> / 3)</summary>
+      <div class="saved-material-body">
+        <% for(const document of listing.authorizationDocuments){ %>
+        <article class="authorization-record">
+        <h3><%= document.documentType %></h3>
+        <p><%= document.issuingAuthority||'Issuer not supplied' %> · <%= document.reference||'Reference not supplied' %></p>
+        <p>Security scan: <strong><%= document.scanStatus||'quarantined' %></strong>. This does not establish authenticity.</p>
+        <p>Uploaded <%= date(document.uploadedAt) %> · <strong><%= document.status==='accepted'?'Accepted for this listing review':document.status==='rejected'?'Rejected':'Pending admin review' %></strong></p><a class="outline small" target="_blank" rel="noopener" href="/listings/<%= listing._id %>/authorization/<%= document._id %>"><%= document.mimeType==='application/pdf'?'Download PDF for review':'View document scan' %></a>
+        <form method="post" action="/owner/<%= listing._id %>/authorization/<%= document._id %>/delete"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="outline small">Remove document & save pending removal</button></form></article>
+        <% } %>
+      </div>
+    </details>
+  <% } %>
+
+  <%- include('../partials/owner-controls') %>
+</section>
+<%- include('../partials/footer') %>

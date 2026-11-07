@@ -1,0 +1,27 @@
+<%- include('partials/header') %>
+<section class="student-page inquiries-page">
+  <%- include('partials/student-nav',{active:'inquiries'}) %>
+  <header class="student-heading">
+    <div><span class="student-kicker">YOUR CONVERSATIONS</span><h1>Your inquiries & visits</h1><p>Follow your questions, owner replies and planned visits from one place.</p></div>
+    <a class="outline" href="/listings">Explore PGs <%- include('partials/icon',{name:'arrow'}) %></a>
+  </header>
+
+  <% if(q.sent==='1'){ %><div class="notice notice-success" role="status">Your inquiry was saved to the owner's Nestly inbox. A visit is only confirmed when the owner agrees.</div><% } %>
+  <div class="student-body">
+    <div class="student-toolbar"><div><h2>Conversation inbox</h2><p><%= inquiries.length %> <%= inquiries.length===1?'conversation':'conversations' %> on this page.</p></div><span class="student-guidance"><%- include('partials/icon',{name:'lock'}) %> Only your inquiries appear here</span></div>
+    <% if(!inquiries.length){ %>
+      <div class="student-empty">
+        <span class="empty-orbit" aria-hidden="true"><%- include('partials/icon',{name:'message'}) %></span>
+        <span class="student-kicker">START A CONVERSATION</span>
+        <h2>No inquiries yet.</h2>
+        <p>Found a PG you like? Open its details to ask the owner about rooms, rent or a visit. Their reply and your inquiry status will appear here.</p>
+        <a class="button" href="/listings">Find a PG <%- include('partials/icon',{name:'arrow'}) %></a>
+      </div>
+    <% }else{ %>
+      <div class="student-panel student-inbox"><%- include('partials/inbox') %></div>
+    <% } %>
+    <%- include('partials/pagination',{page,pages,base:'/inquiries?'}) %>
+    <p class="student-guidance inquiry-guidance"><%- include('partials/icon',{name:'info'}) %><span>A requested visit becomes confirmed only when the owner agrees. Check the recorded reply and scheduled time before travelling.</span></p>
+  </div>
+</section>
+<%- include('partials/footer') %>

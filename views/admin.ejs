@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+<% const draftView=typeof drafts!=='undefined'&&drafts; const draftsTotal=typeof draftCount!=='undefined'?draftCount:0; %>
+<section class="portal-page admin-portal">
+  <div class="workspace-bar"><span><%- include('partials/icon',{name:'grid'}) %> Admin workspace</span><nav aria-label="Admin workspace"><a href="/admin" aria-current="page">Property reviews</a><a href="/admin/owners">Manage owners</a><a href="/admin/directory">Public directory</a><a href="/admin/audit">Audit log</a></nav></div>
+  <header class="section-heading portal-header"><div><span class="eyebrow portal-kicker">ADMINISTRATION</span><h1>PG submissions</h1><p class="portal-subtitle">A clear view of your properties, owners and review queue.</p></div><a class="outline" href="/admin"><%- include('partials/icon',{name:'refresh'}) %> Refresh review queue</a></header>
+  <div class="admin-metrics" aria-label="Platform overview">
+    <% for(const [label,value,icon,tone] of [['Published PGs',summary.published,'building','blue'],['Owner accounts',summary.owners,'users','violet'],['Total inquiries',summary.inquiries,'message','green'],['Listings with open reports',summary.reported,'flag','amber']]){ %>
+      <div class="metric-card"><div class="metric-top"><span><%= label %></span><span class="metric-icon metric-<%= tone %>"><%- include('partials/icon',{name:icon}) %></span></div><strong><%= value %></strong><span class="metric-caption"><%= label==='Published PGs'?'Visible to students':label==='Owner accounts'?'Registered property owners':label==='Total inquiries'?'Student conversations':'Awaiting moderation' %></span></div>
+    <% } %>
+  </div>
+  <div class="panel review-panel">
+    <div class="portal-section-heading"><div><h2>Property reviews</h2><p>Review the details. Help every listing make a good first impression.</p></div><span class="privacy-note"><%- include('partials/icon',{name:'lock'}) %> Private workspace</span></div>
+    <nav class="review-tabs" aria-label="Review status">
+      <a class="review-tab <%= history||draftView?'':'is-active' %>" href="/admin" <%- !history&&!draftView?'aria-current="page"':'' %>>Pending approval <span class="tab-count">(<%= pendingCount %>)</span></a>
+      <a class="review-tab <%= draftView?'is-active':'' %>" href="/admin?view=drafts" <%- draftView?'aria-current="page"':'' %>>Saved drafts <span class="tab-count">(<%= draftsTotal %>)</span></a>
+      <a class="review-tab <%= history?'is-active':'' %>" href="/admin?view=all" <%- history?'aria-current="page"':'' %>>All properties & reports</a>
+    </nav>
+    <% if(draftView){ %><div class="review-guidance"><span class="guidance-icon"><%- include('partials/icon',{name:'info'}) %></span><div><strong>Saved, ready for the next step.</strong><p>These PGs are saved, but not submitted for approval. Open a record to see missing items or request corrections. Owners must complete and submit drafts before approval.</p></div></div><% } %>
+    <% if(!listings.length){ %><div class="empty portal-empty"><span class="empty-symbol"><%- include('partials/icon',{name:history?'building':draftView?'file':'check'}) %></span><h2><%= history?'No properties yet.':draftView?'No saved drafts.':'No PGs awaiting approval.' %></h2><p>Complete owner submissions appear in Pending approval.<br>Incomplete or saved drafts appear in Saved drafts.</p><% if(!draftView){ %><a class="outline small" href="/admin?view=drafts">View saved drafts <%- include('partials/icon',{name:'arrow'}) %></a><% } %></div><% }else{ %>
+      <div class="record-list-header" aria-hidden="true"><span>PROPERTY & OWNER</span><span>PUBLICATION STATUS</span><span>REVIEW</span></div>
+      <div class="admin-records"><% for(const l of listings){ const tone=l.publicHidden?'hidden':l.listingStatus==='published'&&!hasLive(l)?'corrections':l.listingStatus; %>
+        <article class="manage-row admin-record"><div class="record-identity"><span class="property-mark"><%- include('partials/icon',{name:'building'}) %></span><div class="record-copy"><h3><a href="/admin/<%= l._id %>"><%= l.name||'Untitled' %></a></h3><p class="record-locality"><%= l.locality||'Locality not supplied' %><span aria-hidden="true"> · </span><%= l.images.length %> photos<span aria-hidden="true"> · </span><%= (l.authorizationDocuments||[]).length %> authorization <%= (l.authorizationDocuments||[]).length===1?"file":"files" %></p><p class="record-owner">Owner: <%= l.ownerId?.name||'Unknown owner' %><span aria-hidden="true"> · </span><%= l.listingStatus==='submitted'?'Submitted':'Last saved' %> <%= date(l.listingStatus==='submitted'?(l.submittedAt||l.updatedAt):l.updatedAt) %><% if(l.reports.length){ %> · <%= l.reports.length %> reports<% } %></p></div></div><span class="badge state-pill" data-state="<%= tone %>"><%= publicationState(l) %></span><a href="/admin/<%= l._id %>" class="outline small record-action">Review PG <%- include('partials/icon',{name:'arrow'}) %></a></article>
+      <% } %></div>
+    <% } %>
+    <div class="review-panel-footer"><span>Showing up to 12 records per page.</span><%- include('partials/pagination',{page,pages,base:history?'/admin?view=all':draftView?'/admin?view=drafts':'/admin?'}) %></div>
+  </div>
+  <details class="publication-help"><summary><%- include('partials/icon',{name:'info'}) %> Publication requirements <span aria-hidden="true">+</span></summary><p>Approve & publish makes the PG visible to students on the homepage and in matching search results. Legacy listings without the current publication policy are hidden until a fresh owner submission and admin approval. No existing data or documents are deleted. Review all records before launch.</p></details>
+</section><%- include('partials/footer') %>

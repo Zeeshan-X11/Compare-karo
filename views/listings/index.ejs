@@ -1,19 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WanderLust</title>
-  </head>
-  <body>
-    <h3>All Listings</h3>
-    <form method="GET" action="/listings/new">
-      <button>Create New Listing</button>
-    </form>
-    <ul>
-      <% for(let listing of allListings) { %>
-      <li><a href="/listings/<%= listing._id %>"> <%= listing.title %> </a></li>
+<%- include('../partials/header') %>
+<%
+const selectedAmenities=(Array.isArray(q.amenity)?q.amenity:[q.amenity]).filter(a=>amenities.includes(a));
+const category=['Men','Women','Co-living'].includes(q.category)?q.category:'';
+const area=localities.includes(q.area)?q.area:'';
+const searchParams=new URLSearchParams();
+for(const key of ['area','minRent','maxRent','sharing','category','sort','food','foodIncluded']){
+  if(typeof q[key]==='string'&&q[key]) searchParams.set(key,q[key]);
+}
+for(const value of selectedAmenities) searchParams.append('amenity',value);
+const searchLink=(key,value)=>{const params=new URLSearchParams(searchParams);params.delete(key);if(value) params.set(key,value);return '/listings'+(params.size?'?'+params.toString():'');};
+const chips=[];
+for(const [key,label] of [['area',area],['category',category],['sharing',sharing.includes(q.sharing)?q.sharing+' sharing':''],['minRent',q.minRent?'From '+money(Number(q.minRent)):''],['maxRent',q.maxRent?'Up to '+money(Number(q.maxRent)):''],['food',q.food==='yes'?'Meals offered':''],['foodIncluded',q.foodIncluded==='yes'?'Meals included':'']]){
+  if(label) chips.push({label,url:searchLink(key,'')});
+}
+for(const label of selectedAmenities){const params=new URLSearchParams(searchParams);params.delete('amenity');for(const a of selectedAmenities.filter(a=>a!==label)) params.append('amenity',a);chips.push({label,url:'/listings'+(params.size?'?'+params.toString():'')});}
+%>
+<section class="student-page explore-page">
+  <%- include('../partials/student-nav',{active:'explore'}) %>
+  <header class="student-heading search-heading">
+    <div><span class="student-kicker">FIND YOUR CORNER OF BENGALURU</span><h1>Find a place that feels like you.</h1><p>Explore local PGs. Compare the details. Connect with the owner.</p></div>
+    <span class="search-area-note"><%- include('../partials/icon',{name:'pin'}) %><span>Currently exploring<strong><%= area||localities.join(" · ") %></strong></span></span>
+  </header>
+  <div class="search-workspace">
+    <aside class="search-sidebar" aria-label="Search filters">
+      <details class="filter-disclosure" open>
+        <summary><span><%- include('../partials/icon',{name:'sliders'}) %> Refine your search</span><span class="filter-toggle-icon" aria-hidden="true">⌄</span></summary>
+        <form action="/listings" method="get" id="pg-filters" class="search-filters">
+          <label>Locality<select name="area"><option value="">All localities</option><% for(const a of localities){ %><option <%= area===a?'selected':'' %>><%= a %></option><% } %></select></label>
+          <fieldset><legend>Monthly budget</legend><div class="budget-inputs"><label>Min (₹)<input type="number" name="minRent" min="0" max="9999999" placeholder="No min" value="<%= typeof q.minRent==='string'?q.minRent:'' %>"></label><span aria-hidden="true">–</span><label>Max (₹)<input type="number" name="maxRent" min="0" max="9999999" placeholder="No max" value="<%= typeof q.maxRent==='string'?q.maxRent:'' %>"></label></div></fieldset>
+          <label>Room sharing<select name="sharing"><option value="">Any sharing</option><% for(const s of sharing){ %><option <%= q.sharing===s?'selected':'' %>><%= s %></option><% } %></select></label>
+          <label>PG category<select name="category"><option value="">All categories</option><% for(const c of ['Men','Women','Co-living']){ %><option <%= category===c?'selected':'' %>><%= c %></option><% } %></select></label>
+          <details class="filter-group" <%= selectedAmenities.length?'open':'' %>><summary>Facilities <span><%= selectedAmenities.length||'Any' %> <span aria-hidden="true">⌄</span></span></summary><div class="filter-checks"><% for(const a of amenities){ %><label><input type="checkbox" name="amenity" value="<%= a %>" <%= selectedAmenities.includes(a)?'checked':'' %>><span><%= a %></span></label><% } %></div></details>
+          <fieldset><legend>Meals</legend><div class="filter-checks"><label><input type="checkbox" name="food" value="yes" <%= q.food==='yes'?'checked':'' %>><span>Meals offered</span></label><label><input type="checkbox" name="foodIncluded" value="yes" <%= q.foodIncluded==='yes'?'checked':'' %>><span>Included in rent</span></label></div></fieldset>
+          <div class="filter-actions"><button class="button"><%- include('../partials/icon',{name:'search'}) %> Show matching PGs</button><a href="/listings">Reset all filters</a></div>
+        </form>
+      </details>
+    </aside>
+    <div class="search-results">
+      <nav class="category-tabs" aria-label="PG categories">
+        <% for(const c of ['', 'Men','Women','Co-living']){ %><a href="<%= searchLink('category',c) %>" <%- category===c?'aria-current="page"':'' %>><%- include('../partials/icon',{name:c?'users':'building'}) %><%= c||'All PGs' %></a><% } %>
+      </nav>
+      <% if(directoryResults?.total){ %>
+      <section class="directory-preview" aria-labelledby="directory-preview-title">
+        <div class="directory-preview-heading"><div><span class="student-kicker">RAJANUKUNTE & NEARBY</span><h2 id="directory-preview-title"><%= directoryResults.total %> public directory entries</h2><p>Publicly sourced PGs · Not verified by Nestly.</p></div><a class="outline small" href="/directory/rajanukunte<%= category?'?category='+encodeURIComponent(category):'' %>">View directory & map ↗</a></div>
+        <p class="directory-filter-note">Category applies here. Budget, sharing, meals and amenity filters apply to owner-listed PGs below; directory rent and vacancies are unconfirmed.</p>
+        <%- include('../partials/directory-cards',{entries:directoryResults.entries}) %>
+      </section>
+      <% }else if(area==='Rajanukunte'){ %><p class="notice">Explore publicly sourced places in the <a href="/directory/rajanukunte">Rajanukunte directory & free map ↗</a>. Availability is unconfirmed.</p><% } %>
+      <div class="results-toolbar">
+        <div><h2><%= total %> owner-listed <%= total===1?'PG':'PGs' %><span><%= area?' in '+area:' to explore' %></span></h2><p>Browse published properties from local owners.</p></div>
+        <div class="sort-control"><label for="pg-sort">Sort by</label><select id="pg-sort" name="sort" form="pg-filters"><option value="recent">Recently added</option><option value="rent-asc" <%= q.sort==='rent-asc'?'selected':'' %>>Rent: low to high</option><option value="rent-desc" <%= q.sort==='rent-desc'?'selected':'' %>>Rent: high to low</option></select><button type="submit" form="pg-filters" class="outline small" aria-label="Apply sort order">Apply</button></div>
+      </div>
+      <% if(chips.length){ %><div class="active-filters" aria-label="Active filters"><% for(const chip of chips){ %><a href="<%= chip.url %>" aria-label="Remove filter: <%= chip.label %>"><%= chip.label %><%- include('../partials/icon',{name:'close'}) %></a><% } %><a class="clear-active" href="/listings">Clear all</a></div><% } %>
+      <% if(listings.length){ %><%- include('../partials/cards') %><% }else if(directoryResults?.total){ %>
+        <div class="panel directory-no-owners"><h2>No matching owner-listed PGs yet.</h2><p>Approved owner submissions will appear here. You can explore the public directory above while new properties are reviewed.</p></div>
+      <% }else{ %>
+        <div class="student-empty search-empty">
+          <div class="search-empty-art" aria-hidden="true"><span class="art-dots"></span><span class="art-building"><%- include('../partials/icon',{name:'building'}) %></span><span class="art-search"><%- include('../partials/icon',{name:'search'}) %></span></div>
+          <span class="student-kicker"><%= total>0?'YOU’VE REACHED THE END':chips.length?'LET’S WIDEN YOUR SEARCH':'YOUR NEXT HOME STARTS HERE' %></span>
+          <h2><%= total>0?'No PGs on this page.':chips.length?'No PGs match your search yet.':'New places are on their way.' %></h2>
+          <p><%= total>0?'Return to the first page to explore matching properties.':chips.length?'Try another locality or adjust your budget and filters. New PGs appear here after admin approval.':'Owners are getting their properties ready. Approved PGs across '+localities.join(', ')+' will appear here as they become available.' %></p>
+          <% if(chips.length||total>0){ %><a class="button" href="<%= total>0?'/listings'+(searchParams.size?'?'+searchParams.toString():''):'/listings' %>"><%- include('../partials/icon',{name:total>0?'arrow':'refresh'}) %><%= total>0?'Back to search results':'Clear filters & explore' %></a><% } %>
+          <div class="empty-localities"><span>EXPLORE A LOCALITY</span><div><% for(const locality of localities){ %><a href="/listings?area=<%= encodeURIComponent(locality) %>"><%- include('../partials/icon',{name:'pin'}) %> <%= locality %> <span aria-hidden="true">↗</span></a><% } %></div></div>
+        </div>
       <% } %>
-    </ul>
-  </body>
-</html>
+      <% if(pages>1){ %><nav class="pagination" aria-label="Search pages"><% if(page>1){ %><a class="outline" href="<%= base %>&page=<%= page-1 %>">← Previous</a><% } %><span>Page <%= page %> of <%= pages %></span><% if(page<pages){ %><a class="outline" href="<%= base %>&page=<%= page+1 %>">Next →</a><% } %></nav><% } %>
+      <div class="search-footnote"><%- include('../partials/icon',{name:'info'}) %><p>Found a place you like? Check its photos, compare move-in costs, and confirm availability directly with the owner.</p></div>
+    </div>
+  </div>
+</section>
+<%- include('../partials/footer') %>

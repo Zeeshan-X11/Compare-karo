@@ -1,0 +1,13 @@
+</main>
+<footer>
+  <div><a class="brand" href="/">nestly.</a><p>Find your PG. Feel at home.</p><small>Starting local. Bengaluru, Karnataka.</small></div>
+  <% if(user?.role==='owner'){ %>
+  <div><strong>Owner workspace</strong><a href="/owner">My properties</a><a href="/owner/new">Add a PG</a><a href="/owner?tab=inquiries">Inquiry inbox</a></div>
+  <% }else if(user?.role==='admin'){ %>
+  <div><strong>Admin workspace</strong><a href="/admin">Review queue</a><a href="/admin/owners">Owner management</a><a href="/admin?view=all">Properties & reports</a><a href="/admin/audit">Audit log</a></div>
+  <% }else{ %>
+  <div><strong>Find your space</strong><% for(const locality of localities){ %><a href="/listings?area=<%= encodeURIComponent(locality) %>"><%= locality %></a><% } %><a href="/listings">Explore all PGs</a></div>
+  <% } %>
+  <div><strong>About Nestly</strong><% if(!user){ %><a href="/list-property">List your property</a><% } %><a href="/about">Our story</a><a href="/contact">Contact</a><% if(user&&user.role!=='user'){ %><a href="/listings">Public website</a><% } %></div>
+  <div><strong>The details</strong><a href="/privacy">Privacy</a><a href="/terms">Terms</a><small>© <%= new Date().getFullYear() %> Nestly</small></div>
+</footer></body></html>

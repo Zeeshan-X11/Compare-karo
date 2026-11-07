@@ -1,0 +1,14 @@
+<div class="directory-grid">
+  <% for(const entry of entries){ %>
+  <article class="directory-card">
+    <div class="directory-card-top"><span class="directory-building" aria-hidden="true"><%- include('icon',{name:'building'}) %></span><span class="directory-category"><%= entry.category %></span></div>
+    <span class="directory-status">Public directory · Unverified</span>
+    <h3><%= entry.name %></h3>
+    <p class="directory-address"><%- include('icon',{name:'pin'}) %><span><%= entry.address %></span></p>
+    <% if(entry.nearbyArea){ %><p class="directory-nearby">Nearby · <%= entry.nearbyArea %></p><% } %>
+    <p class="directory-unknown">Confirm rent, vacancies and facilities with the property.</p>
+    <div class="directory-source">Source: <%= entry.sourceName %><br>Source checked <%= date(entry.checkedAt) %></div>
+    <div class="directory-actions"><a class="button small" href="<%= entry.sourceUrl %>" target="_blank" rel="noopener noreferrer" aria-label="View source for <%= entry.name %>">Details at source ↗</a><a class="outline small" href="<%= entry.mapSearchUrl %>" target="_blank" rel="noopener noreferrer" aria-label="Search Google Maps for <%= entry.name %>">Find on Maps ↗</a></div>
+  </article>
+  <% } %>
+</div>

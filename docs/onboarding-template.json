@@ -1,0 +1,42 @@
+{
+  "instructions": "Blank intake template only. Do not publish without owner authorization and admin review. Submit through owner dashboard; no automatic import.",
+  "legalBusinessName": null,
+  "description": null,
+  "exactAddress": null,
+  "locality": null,
+  "coordinates": {
+    "latitude": null,
+    "longitude": null,
+    "validated": false,
+    "publicationAuthorized": false
+  },
+  "ownerContact": {
+    "name": null,
+    "phone": null,
+    "publicDisplayAuthorized": false
+  },
+  "sourceUrl": null,
+  "sourceDate": null,
+  "monthlyRent": null,
+  "securityDeposit": null,
+  "sharingOptions": [],
+  "amenities": [],
+  "foodOptions": [],
+  "houseRules": null,
+  "images": [
+    {
+      "file": null,
+      "propertyId": null,
+      "type": null,
+      "rightsHolder": null,
+      "publicationPermission": false,
+      "captureDate": null,
+      "moderationStatus": "pending"
+    }
+  ],
+  "ownerAuthorizationStatus": "unconfirmed",
+  "availabilityStatus": "unknown",
+  "availabilityConfirmedAt": null,
+  "priceConfirmedAt": null,
+  "listingModerationStatus": "draft"
+}

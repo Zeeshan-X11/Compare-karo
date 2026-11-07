@@ -1,24 +1,188 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wanderlust</title>
-  </head>
-  <body>
-    <h3>Listing Details :</h3>
-    <ul>
-      <li><%= listing.title %></li>
-      <li><%= listing.description %></li>
-      <li>&#8377; <%= listing.price.toLocaleString("en-IN") %></li>
-      <li><%= listing.location %></li>
-      <li><%= listing.country %></li>
-    </ul>
-    <br />
-    <a href="/listings/<%= listing._id %>/edit">Edit this Listing</a>
-    <br /><br />
-    <form method="POST" action="/listings/<%=listing._id%>?_method=DELETE">
-      <button>Delete this listing</button>
-    </form>
-  </body>
-</html>
+<%- include('../partials/header') %>
+<%
+  const primary = coverPhoto(listing);
+  const photos = listing.images.filter(image => image.status === 'approved').sort((a, b) =>
+    Number(String(b._id) === String(primary?._id)) - Number(String(a._id) === String(primary?._id))
+  );
+  const canContact = listing.contactPublic && market.phone(listing.contactPhone);
+%>
+<section class="student-page property-page">
+  <%- include('../partials/student-nav', { active: 'explore' }) %>
+
+  <nav class="property-breadcrumb" aria-label="Breadcrumb">
+    <a href="/listings">Explore PGs</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page"><%= listing.name %></span>
+  </nav>
+
+  <header class="property-heading">
+    <div class="property-heading-copy">
+      <span class="eyebrow"><%= listing.locality %> · <%= listing.propertyCategory %></span>
+      <h1><%= listing.name %></h1>
+      <p class="property-location"><%- include('../partials/icon', { name: 'pin' }) %><span><%= listing.address %></span></p>
+      <% if(!user||user.role==='user'){ %><div class="actions listing-actions property-heading-actions">
+        <% if(user){ %>
+          <form method="post" action="/favorites/<%= listing._id %>">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="action" value="<%= favoriteIds.has(String(listing._id))?'remove':'add' %>">
+            <input type="hidden" name="returnTo" value="/listings/<%= listing._id %>">
+            <button class="outline small"><%= favoriteIds.has(String(listing._id))?'♥ Saved PG':'♡ Save PG' %></button>
+          </form>
+        <% } %>
+        <form method="post" action="/compare/<%= listing._id %>">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input type="hidden" name="action" value="<%= compareIds.has(String(listing._id))?'remove':'add' %>">
+          <button class="outline small"><%= compareIds.has(String(listing._id))?'Remove from comparison':'Compare this PG +' %></button>
+        </form>
+        <a class="quiet" href="/compare">View comparison →</a>
+      </div><% } %>
+    </div>
+    <div class="detail-price property-summary-price">
+      <span class="property-price-label">Starting monthly rent</span>
+      <div><strong class="price"><%= money(listing.monthlyRent) %></strong><span class="property-price-period"> / month</span></div>
+      <p class="price-caption"><%= listing.priceConfirmedAt?'Last confirmed '+date(listing.priceConfirmedAt):'Confirm current rent with owner' %></p>
+    </div>
+  </header>
+
+  <div class="property-media" aria-labelledby="property-photos-title">
+    <div class="property-media-heading">
+      <h2 id="property-photos-title">Property photographs</h2>
+      <span class="property-photo-count"><%= photos.length %> <%= photos.length===1?'photo':'photos' %> · Select any photo to view it full size.</span>
+    </div>
+    <div class="gallery property-gallery">
+      <% for(const [index, img] of photos.entries()){ %>
+        <figure>
+          <a class="gallery-photo" href="/media/<%= img.filename %>" data-caption="<%= img.type==='Exterior'?'Building / exterior':img.type %> — <%= listing.name %>" aria-label="View <%= img.type %> photo <%= index+1 %> of <%= photos.length %>">
+            <img width="800" height="600" decoding="async" src="/media/<%= img.thumbnail||img.filename %>" alt="<%= img.type %> at <%= listing.name %>" loading="<%= index===0?'eager':'lazy' %>">
+          </a>
+          <figcaption><%= img.type==='Exterior'?'Building / exterior':img.type %></figcaption>
+        </figure>
+      <% } %>
+      <% if(!photos.length){ %><div class="photo placeholder"><%- include('../partials/icon', { name: 'photo' }) %><span>Photos coming soon</span></div><% } %>
+    </div>
+  </div>
+
+  <% if(photos.length){ %>
+    <dialog class="photo-viewer" aria-label="Property photo gallery">
+      <div class="viewer-toolbar"><span class="viewer-counter" aria-live="polite"></span><button class="outline viewer-close" type="button" aria-label="Close photo gallery">Close ✕</button></div>
+      <img class="viewer-image" alt="">
+      <p class="viewer-caption"></p>
+      <div class="viewer-controls"><button class="outline viewer-previous" type="button" aria-label="Previous photograph">← Previous</button><button class="outline viewer-next" type="button" aria-label="Next photograph">Next →</button></div>
+    </dialog>
+  <% } %>
+
+  <nav class="property-tabs" aria-label="Property sections">
+    <a href="#overview">Overview</a>
+    <a href="#rooms">Rooms & pricing</a>
+    <a href="#amenities">Amenities</a>
+    <a href="#location">Location</a>
+    <a href="#owner-contact">Contact owner</a>
+  </nav>
+
+  <div class="detail-layout property-detail-layout">
+    <div class="property-detail-main">
+      <section class="panel property-section" id="overview" aria-labelledby="overview-title">
+        <div class="property-section-heading"><span class="eyebrow">GET TO KNOW YOUR NEXT HOME</span><h2 id="overview-title">A little about this place</h2></div>
+        <% if(listing.verification?.method && listing.verification.method!=='unverified'){ %>
+          <p class="notice"><%= listing.verification.method==='site-visit'?'A property site visit was recorded':'Supporting documents were reviewed' %> on <%= date(listing.verification.performedAt) %>. This records the stated check only and is not a quality guarantee.</p>
+        <% } %>
+        <p class="preserve property-description"><%= listing.description %></p>
+        <div class="facts property-facts">
+          <div>Security deposit<strong><%= listing.securityDeposit==null?'Ask owner':money(listing.securityDeposit) %></strong></div>
+          <div>Sharing<strong><%= listing.sharingOptions.join(', ') %></strong></div>
+          <div>Availability<strong><%= listing.availabilityStatus==='unavailable'?'Temporarily unavailable':'Ask owner about availability' %></strong><small>Last confirmed: <%= date(listing.availabilityConfirmedAt) %></small><% if(!listing.availabilityConfirmedAt || Date.now()-new Date(listing.availabilityConfirmedAt)>30*86400000){ %><small>Availability needs a fresh confirmation.</small><% } %></div>
+        </div>
+      </section>
+
+      <section class="panel property-section" id="rooms" aria-labelledby="rooms-title">
+        <div class="property-section-heading"><span class="eyebrow">A ROOM THAT FITS YOUR BUDGET</span><h2 id="rooms-title">Sharing, rent & room availability</h2></div>
+        <% if((listing.roomOptions||[]).length){ %>
+          <div class="table-scroll">
+            <table class="data-table room-pricing-table">
+              <caption class="sr-only">Monthly rent and owner-reported room availability for each sharing type</caption>
+              <thead><tr><th scope="col">Sharing</th><th scope="col">Monthly rent</th><th scope="col">Owner-reported available rooms</th></tr></thead>
+              <tbody><% for(const room of listing.roomOptions){ %><tr><th scope="row"><%= room.sharing %></th><td><%= money(room.monthlyRent) %></td><td><%= room.availableRooms==null?'Ask owner':room.availableRooms %><%= room.totalRooms==null?'':' / '+room.totalRooms %></td></tr><% } %></tbody>
+            </table>
+          </div>
+        <% }else{ %><p>Sharing-wise rent has not been supplied. Ask the owner for current room prices and vacancies.</p><% } %>
+        <p class="muted property-section-note">Availability last confirmed: <%= date(listing.availabilityConfirmedAt) %>. Counts are reported by the owner and may change.</p>
+
+        <div class="move-in-panel">
+          <div class="property-section-heading"><h3>Total move-in cost</h3><p>See the reported charges for your preferred sharing type.</p></div>
+          <form method="get" action="/listings/<%= listing._id %>" class="actions move-in-controls">
+            <label>Sharing type<select name="sharing"><% for(const type of listing.sharingOptions){ %><option <%= selected===type?'selected':'' %>><%= type %></option><% } %></select></label>
+            <button class="outline small">Calculate move-in amount</button>
+          </form>
+          <dl class="cost-breakdown">
+            <dt>First month's rent</dt><dd><%= cost.rent==null?'Not confirmed':money(cost.rent) %></dd>
+            <dt>Security deposit</dt><dd><%= cost.deposit==null?'Not confirmed':money(cost.deposit) %></dd>
+            <dt>Other one-time charges</dt><dd><%= cost.fee==null?'Not confirmed':money(cost.fee) %></dd>
+            <dt>Total reported move-in amount</dt><dd><strong><%= cost.total==null?'Cannot calculate a complete total yet':money(cost.total) %></strong></dd>
+          </dl>
+          <% if(cost.total==null){ %><p class="notice">Known charges total <%= money(cost.knownTotal) %>. Some charges are unconfirmed; ask the owner before paying.</p><% } %>
+          <p class="muted property-section-note">This is an estimate from the approved listing details. No payment or booking is taken by Nestly.</p>
+        </div>
+      </section>
+
+      <section class="panel property-section" id="amenities" aria-labelledby="amenities-title">
+        <div class="property-section-heading"><span class="eyebrow">THE EVERYDAY ESSENTIALS</span><h2 id="amenities-title">What you'll find here</h2></div>
+        <% if(listing.amenities.length){ %>
+          <ul class="amenity-list"><% for(const amenity of listing.amenities){ %><li><%- include('../partials/icon', { name: 'check' }) %><span><%= amenity %></span></li><% } %></ul>
+        <% }else{ %><p>Amenities have not been confirmed. Ask the owner.</p><% } %>
+        <div class="property-extras">
+          <div><h3>Food</h3><p><%= listing.foodOptions.length?listing.foodOptions.join(', ')+' offered. Confirm meal charges and schedules with the owner.':'Food details not confirmed.' %></p><p>Meals included in rent: <%= listing.foodIncluded===true?'Yes':listing.foodIncluded===false?'No, separate charges':'Not confirmed' %></p></div>
+          <div><h3>House rules</h3><p class="preserve"><%= listing.houseRules||'Please confirm house rules with the owner.' %></p></div>
+        </div>
+      </section>
+
+      <section class="panel property-section" id="location" aria-labelledby="location-title">
+        <div class="property-section-heading"><span class="eyebrow">AROUND THE NEIGHBOURHOOD</span><h2 id="location-title">Location</h2></div>
+        <div class="location-card">
+          <span class="location-icon"><%- include('../partials/icon', { name: 'pin' }) %></span>
+          <div class="location-copy"><strong><%= listing.locality %>, Bengaluru</strong><p><%= listing.address %></p><a class="outline small" href="<%= map.url %>" target="_blank" rel="noopener noreferrer"><%= map.exact?'View reviewed property location in Google Maps ↗':'Explore approximate locality in Google Maps ↗' %></a></div>
+        </div>
+        <% if(!map.exact){ %><p class="muted property-section-note">Locality only — the exact property pin has not been reviewed and authorized for publication. Ask the owner for directions.</p><% } %>
+        <%- include('../partials/map',{map}) %>
+      </section>
+
+      <details class="panel property-report">
+        <summary><%- include('../partials/icon', { name: 'flag' }) %> Report inaccurate or misleading details</summary>
+        <% if(user?.role==='user'){ %>
+          <form method="post" action="/listings/<%= listing._id %>/report">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <label>What should we review?<textarea name="message" minlength="10" maxlength="1000" required></textarea></label>
+            <button class="outline">Send report</button>
+          </form>
+        <% }else if(!user){ %><p><a href="/login">Log in</a> to report a property.</p><% }else{ %><p>Student reports are reviewed in the admin workspace.</p><% } %>
+      </details>
+    </div>
+
+    <aside class="property-sidebar" aria-labelledby="owner-contact-title">
+      <div class="panel sticky contact-panel" id="owner-contact">
+        <div class="contact-panel-header"><span class="eyebrow">TAKE THE NEXT STEP</span><h2 id="owner-contact-title">Meet your next home.</h2><p>Ask a question or arrange a visit with the owner.</p></div>
+        <% if(canContact){ %>
+          <div class="contact-methods"><p>Authorized contact: <strong><%= listing.contactName %></strong></p><div class="actions"><a class="outline" href="/listings/<%= listing._id %>/contact/call">Call <%= listing.contactPhone %></a><% if(listing.whatsappAllowed){ %><a class="button" href="/listings/<%= listing._id %>/contact/whatsapp" target="_blank" rel="noopener">WhatsApp owner ↗</a><% } %></div></div>
+        <% } %>
+        <% if(user?.role==='user'){ %>
+          <form class="inquiry-form" method="post" action="/listings/<%= listing._id %>/inquiries">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <label>Message to the owner<textarea name="message" required minlength="10" maxlength="2000" placeholder="Ask about rent, rooms or a visit..."></textarea></label>
+            <label>Preferred visit date (optional)<input type="date" name="preferredVisitDate"></label>
+            <p class="muted contact-privacy">Your name and account email will be shared with this property's owner. Your request will appear in their Nestly inbox.</p>
+            <button class="button">Send inquiry / visit request →</button>
+          </form>
+        <% }else if(!user){ %>
+          <div class="contact-signin"><p>Log in to send an inquiry or request a visit.</p><a href="/login" class="button">Log in to connect →</a></div>
+        <% }else{ %>
+          <div class="contact-signin"><p>You are previewing the public listing from your <%= user.role==='admin'?'admin':'owner' %> account.</p><a class="outline" href="<%= user.role==='admin'?'/admin':'/owner?tab=inquiries' %>"><%= user.role==='admin'?'Open admin review':'Open owner inquiry inbox' %> →</a></div>
+        <% } %>
+        <div class="contact-fine-print"><p>Prices and room availability may change. Please confirm details with the owner.</p><small>Last updated: <%= date(listing.updatedAt) %>. Publication review does not guarantee room quality or mean physical inspection.</small></div>
+      </div>
+    </aside>
+  </div>
+</section>
+<div class="mobile-contact">
+  <a class="button" href="<%= canContact?'/listings/'+listing._id+'/contact/call':'#owner-contact' %>">Contact owner →</a>
+  <% if(canContact&&listing.whatsappAllowed){ %><a class="outline" href="/listings/<%= listing._id %>/contact/whatsapp" target="_blank" rel="noopener">WhatsApp ↗</a><% } %>
+</div>
+<%- include('../partials/footer') %>

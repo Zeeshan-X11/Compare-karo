@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+<section class="student-page compare-page">
+  <%- include('partials/student-nav',{active:'compare'}) %>
+  <header class="student-heading">
+    <div><span class="student-kicker">SIDE BY SIDE</span><h1>Your PG comparison</h1><p>A closer look at rent, room options and the details that matter to you.</p></div>
+    <a class="outline" href="/listings"><%= listings.length?'Find another PG':'Explore PGs' %> <%- include('partials/icon',{name:'arrow'}) %></a>
+  </header>
+
+  <div class="student-body">
+    <div class="student-toolbar"><div><h2>Compare your options <span class="student-count"><%= listings.length %> / 3</span></h2><p>Compare up to three published PGs. Use Compare on a property card to add one.</p></div><% if(listings.length){ %><span class="student-guidance"><%- include('partials/icon',{name:'grid'}) %> Scroll across to see every property</span><% } %></div>
+    <% if(!listings.length){ %>
+      <div class="student-empty">
+        <span class="empty-orbit" aria-hidden="true"><%- include('partials/icon',{name:'grid'}) %></span>
+        <span class="student-kicker">MAKE ROOM FOR THE RIGHT CHOICE</span>
+        <h2>No PGs selected yet.</h2>
+        <p>Add up to three PGs from search results to compare monthly rent, deposits, facilities and total move-in costs in one place.</p>
+        <div class="actions"><a class="button" href="/listings">Explore PGs →</a><a class="quiet" href="/favorites">View saved PGs</a></div>
+      </div>
+    <% }else{ %>
+      <div class="table-scroll student-panel comparison-shell">
+        <table class="data-table comparison">
+          <caption class="sr-only">Side-by-side PG details and costs</caption>
+          <thead><tr><th scope="col">Property details</th><% for(const l of listings){ const photo=coverPhoto(l); %>
+            <th scope="col"><div class="comparison-property"><a class="comparison-photo" href="/listings/<%= l._id %>"><% if(photo){ %><img src="/media/<%= photo.thumbnail||photo.filename %>" alt="<%= photo.type %> at <%= l.name %>" width="320" height="200" loading="lazy" decoding="async"><% }else{ %><span><%- include('partials/icon',{name:'building'}) %><small>Photo unavailable</small></span><% } %></a><div class="comparison-property-copy"><span class="student-kicker"><%= l.locality %></span><a href="/listings/<%= l._id %>"><%= l.name %> ↗</a><strong><%= money(l.monthlyRent) %></strong><small><%= l.monthlyRent==null?'Ask the owner for pricing':'Starting monthly rent' %></small></div><form method="post" action="/compare/<%= l._id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="action" value="remove"><button class="outline small" aria-label="Remove <%= l.name %> from comparison">Remove</button></form></div></th>
+          <% } %></tr></thead>
+          <tbody>
+            <% for(const [label,key] of [['Locality','locality'],['Category','propertyCategory'],['Starting monthly rent','monthlyRent'],['Security deposit','securityDeposit'],['Other one-time charges','oneTimeFee'],['Sharing','sharingOptions'],['Confirmed facilities','amenities'],['Meals','foodOptions']]){ %>
+              <tr><th scope="row"><%= label %></th><% for(const l of listings){ %><td><%= ['monthlyRent','securityDeposit','oneTimeFee'].includes(key)?(l[key]==null?'Not confirmed':money(l[key])):Array.isArray(l[key])?(l[key].join(', ')||'Not confirmed'):(l[key]||'Not confirmed') %></td><% } %></tr>
+            <% } %>
+            <tr><th scope="row">Rent by sharing</th><% for(const l of listings){ %><td><% if(!(l.roomOptions||[]).length){ %><span>Not supplied</span><% }for(const room of l.roomOptions||[]){ %><p><%= room.sharing %>: <%= money(room.monthlyRent) %> · <%= room.availableRooms==null?'Availability unconfirmed':room.availableRooms+' rooms available' %></p><% } %></td><% } %></tr>
+            <tr class="comparison-total"><th scope="row">Move-in total, lowest listed rent</th><% for(const l of listings){const lowest=(l.roomOptions||[]).filter(r=>r.monthlyRent!=null).sort((a,b)=>a.monthlyRent-b.monthlyRent)[0]?.sharing;const amount=market.moveIn(l,lowest); %><td><strong><%= amount.total==null?'Incomplete cost details; ask owner':money(amount.total) %></strong></td><% } %></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="student-guidance comparison-footnote"><%- include('partials/icon',{name:'info'}) %><span>Rent and availability may change. Confirm current details and additional charges with the owner.</span></p>
+    <% } %>
+  </div>
+</section>
+<%- include('partials/footer') %>

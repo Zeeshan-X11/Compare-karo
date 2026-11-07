@@ -1,0 +1,12 @@
+<% if(user&&user.role!=='user'){ %>
+<div class="student-nav public-preview-nav"><a href="<%= user.role==='admin'?'/admin':'/owner' %>">← Back to <%= user.role==='admin'?'admin':'owner' %> workspace</a><span class="student-location"><%- include('icon',{name:'grid'}) %> Public listing preview</span></div>
+<% }else{ %>
+<div class="student-nav">
+  <nav aria-label="PG finder navigation">
+    <% for(const item of [{key:'explore',href:'/listings',icon:'grid',label:'Explore PGs'},{key:'saved',href:'/favorites',icon:'heart',label:'Saved PGs'},{key:'compare',href:'/compare',icon:'compare',label:'Compare'},{key:'inquiries',href:'/inquiries',icon:'message',label:'My inquiries'}]){ %>
+      <a href="<%= item.href %>" <%- active===item.key?'aria-current="page"':'' %>><%- include('icon',{name:item.icon}) %><span><%= item.label %></span></a>
+    <% } %>
+  </nav>
+  <span class="student-location"><%- include('icon',{name:'pin'}) %> Bengaluru, Karnataka</span>
+</div>
+<% } %>

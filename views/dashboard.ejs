@@ -1,0 +1,102 @@
+<%- include('partials/header') %>
+<% const inboxView = q.tab === 'inquiries'; %>
+<section class="portal-page owner-portal">
+  <div class="workspace-bar owner-workspace-nav">
+    <span><%- include('partials/icon',{name:'building'}) %> Owner workspace</span>
+    <nav aria-label="Owner workspace">
+      <a href="/owner" <%- inboxView?'':'aria-current="page"' %>>My properties</a>
+      <a href="/owner?tab=inquiries" <%- inboxView?'aria-current="page"':'' %>>Inquiry inbox</a>
+    </nav>
+  </div>
+
+  <header class="section-heading portal-header">
+    <div>
+      <span class="eyebrow portal-kicker">OWNER SPACE</span>
+      <h1><%= inboxView?'Inquiry inbox':'My properties' %></h1>
+      <p class="portal-subtitle"><%= inboxView?'Answer student questions, schedule visits and follow up on inquiries.':'Manage your PG details, availability and approval status.' %></p>
+    </div>
+    <% if(!inboxView){ %><a href="/owner/new" class="button">+ Add your PG</a><% } %>
+  </header>
+
+  <% if(!inboxView){ %>
+  <% if(q.submitted==='1'){ %>
+    <div class="notice notice-success" role="status">Your PG was submitted for admin approval. New details appear on the website after approval.</div>
+  <% } %>
+
+  <details class="publication-help owner-approval-guide">
+    <summary><%- include('partials/icon',{name:'info'}) %> Listing approval process <span aria-hidden="true">+</span></summary>
+    <div class="owner-workflow">
+      <div class="workflow-step"><span class="workflow-number" aria-hidden="true">01</span><div><strong>Prepare your listing</strong><span>Add accurate details, photos and documents.</span></div></div>
+      <div class="workflow-step"><span class="workflow-number" aria-hidden="true">02</span><div><strong>Submit for review</strong><span>Send the completed PG to the admin team.</span></div></div>
+      <div class="workflow-step"><span class="workflow-number" aria-hidden="true">03</span><div><strong>Welcome new residents</strong><span>Approved listings appear in student search.</span></div></div>
+    </div>
+    <p>Draft → Submitted for admin review → Approved & live. Pending edits keep the previous approved version publicly visible until the admin approves the changes.</p>
+  </details>
+
+  <section class="portal-section" aria-labelledby="owner-properties-title">
+    <div class="portal-section-heading"><div><h2 id="owner-properties-title">My PG listings</h2><p>Keep your property details and availability up to date.</p></div><span class="section-count"><%= total %> <%= total===1?'property':'properties' %></span></div>
+    <% if(!listings.length){ %>
+      <div class="empty portal-empty">
+        <span class="empty-symbol" aria-hidden="true">⌂</span>
+        <h3>Your first listing starts here.</h3>
+        <p>Share genuine details. Save a draft, then submit it for review.</p>
+        <a class="button" href="/owner/new">Create a draft →</a>
+      </div>
+    <% } %>
+    <div class="property-records">
+      <% for(const l of listings){ %>
+        <article class="manage-row property-record">
+          <div class="property-record-main">
+            <div class="property-record-title"><h3><%= l.name||'Untitled draft' %></h3><span class="badge state-pill" data-state="<%= l.publicHidden?'hidden':l.listingStatus==='published'&&!hasLive(l)?'corrections':l.listingStatus %>"><%= publicationState(l) %></span></div>
+            <p class="property-record-location"><%= l.locality||'Locality not set' %> <span aria-hidden="true">·</span> <%= money(l.monthlyRent) %></p>
+            <div class="metric-inline" aria-label="Listing activity">
+              <p><span>Recorded views:</span><strong><%= l.statistics?.views||0 %></strong></p>
+              <p><span>Contact clicks:</span><strong><%= l.statistics?.contactClicks||0 %></strong></p>
+              <p><span>Inquiries:</span><strong><%= l.inquiryCount||0 %></strong></p>
+            </div>
+            <% if(l.moderationNotes){ %><p class="property-review-note">Review notes: <%= l.moderationNotes %></p><% } %>
+          </div>
+          <div class="listing-progress property-record-progress">
+            <% if(hasLive(l)&&l.listingStatus!=='published'){ %>
+              <p class="muted">Your previous approved version is still live. These changes await review.</p>
+              <a href="/listings/<%= l._id %>" class="quiet">View current public version →</a>
+            <% } %>
+            <% if(l.listingStatus==='published'&&!hasLive(l)){ %>
+              <p class="muted">This older listing requires updated details and authorization evidence, then a fresh submission and admin approval before it can appear in search.</p>
+            <% } %>
+            <% if(['draft','rejected','corrections'].includes(l.listingStatus)){const missing=submissionIssues(l);if(missing.length){ %>
+              <div class="readiness-note"><strong>Complete your listing</strong><p class="muted">Not ready to send: <%= missing.join(', ') %></p></div>
+            <% }else{ %>
+              <p class="muted">Your listing is ready to send for review.</p>
+              <form method="post" action="/owner/<%= l._id %>/submit"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="button small">Send to admin for approval →</button></form>
+            <% }} %>
+            <% if(l.listingStatus==='submitted'){ %>
+              <p class="muted">Sent to admin: <%= date(l.submittedAt||l.updatedAt) %>. <%= hasLive(l)?'These changes are private; your approved version remains live.':'Not public until approved.' %></p>
+            <% } %>
+            <% if(l.listingStatus==='published'&&hasLive(l)){ %><a class="quiet" href="/listings/<%= l._id %>">View live PG →</a><% } %>
+            <a class="outline small" href="/owner/<%= l._id %>/edit">Manage property →</a>
+          </div>
+        </article>
+      <% } %>
+    </div>
+    <%- include('partials/pagination',{page,pages,base:'/owner?'}) %>
+  </section>
+
+  <% }else{ %>
+  <section class="panel portal-section owner-inbox" aria-labelledby="owner-inbox-title">
+    <div class="portal-section-heading"><div><h2 id="owner-inbox-title">Student inquiries</h2><p>View messages and update the status of each inquiry.</p></div></div>
+    <form method="get" action="/owner" class="actions inbox-filter">
+      <input type="hidden" name="tab" value="inquiries">
+      <label>Inquiry status<select name="inquiryStatus"><option value="">All statuses</option><% for(const [value,label] of [['new','New'],['contacted','Contacted'],['visit_scheduled','Visit scheduled'],['closed','Closed']]){ %><option value="<%= value %>" <%= q.inquiryStatus===value?'selected':'' %>><%= label %></option><% } %></select></label>
+      <button class="outline small">Filter inbox</button>
+    </form>
+    <p class="muted inbox-privacy-note">Showing 20 inquiries per page. Contact details are shared only with the property's owner.</p>
+    <%- include('partials/inbox') %>
+    <nav class="pagination" aria-label="Inbox pages">
+      <% if(inboxPage>1){ %><a href="/owner?tab=inquiries&amp;inboxPage=<%= inboxPage-1 %>&amp;inquiryStatus=<%= typeof q.inquiryStatus==='string'?encodeURIComponent(q.inquiryStatus):'' %>">← Previous inquiries</a><% } %>
+      <% if(inboxPage<inboxPages){ %><a href="/owner?tab=inquiries&amp;inboxPage=<%= inboxPage+1 %>&amp;inquiryStatus=<%= typeof q.inquiryStatus==='string'?encodeURIComponent(q.inquiryStatus):'' %>">Next inquiries →</a><% } %>
+    </nav>
+  </section>
+  <% } %>
+</section>
+<%- include('partials/footer') %>
