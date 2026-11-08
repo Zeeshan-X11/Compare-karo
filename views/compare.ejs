@@ -23,10 +23,18 @@
         const cheapest = priced.filter(l => l.monthlyRent === lowestRent);
         const sharedAmenities = (listings[0].amenities || []).filter(amenity =>
           listings.every(l => (l.amenities || []).includes(amenity)));
+        const sharingTypes = [...new Set(listings.flatMap(l => (l.roomOptions || []).map(room => room.sharing)))];
+        const sameSharing = sharingTypes.map(sharing => ({
+          sharing,
+          prices: listings.map(l => ({ name: l.name, rent: (l.roomOptions || []).find(room => room.sharing === sharing)?.monthlyRent }))
+            .filter(option => option.rent != null)
+            .sort((a, b) => a.rent - b.rent)
+        })).filter(({ prices }) => prices.length >= 2);
       %>
       <aside class="student-panel" aria-labelledby="compare-summary">
         <span class="student-kicker">BASED ON LISTING DETAILS</span>
-        <h2 id="compare-summary">Quick comparison summary</h2>
+        <h2 id="compare-summary">What stands out</h2>
+        <p>Compare the same room type first, then check meals, vacancies and what you’ll pay upfront.</p>
         <ul>
           <% if(cheapest.length){ %>
             <li><strong>Lowest listed starting rent:</strong> <%= cheapest.map(l => l.name).join(', ') %> at <%= money(lowestRent) %> per month.</li>
@@ -36,17 +44,35 @@
           <% if(sharedAmenities.length){ %>
             <li><strong>Facilities listed by all:</strong> <%= sharedAmenities.join(', ') %>.</li>
           <% } %>
+          <% for(const { sharing, prices } of sameSharing){ %>
+            <li><strong><%= sharing %> sharing:</strong> <%= prices.map(option => option.name + ' at ' + money(option.rent)).join(', ') %> per month.
+              <% const gap = prices.at(-1).rent - prices[0].rent; %>
+              <%= gap ? 'The lowest and highest listed rates differ by ' + money(gap) + ' per month.' : 'The listed rates match.' %>
+            </li>
+          <% } %>
+          <% if(!sameSharing.length){ %><li>Ask for quotes for the same room type. Starting rents may be based on different sharing arrangements.</li><% } %>
+        </ul>
+        <h3>What to check at each PG</h3>
+        <ul>
           <% for(const listing of listings){
             const lowestRoom = (listing.roomOptions || []).filter(room => room.monthlyRent != null)
               .sort((a,b) => a.monthlyRent - b.monthlyRent)[0];
-            const total = market.moveIn(listing, lowestRoom?.sharing).total;
+            const costs = market.moveIn(listing, lowestRoom?.sharing);
+            const missingCosts = [['rent', costs.rent], ['deposit', costs.deposit], ['one-time fees', costs.fee]]
+              .filter(([, value]) => value == null).map(([label]) => label);
+            const vacancyTypes = (listing.roomOptions || []).filter(room => room.availableRooms > 0).map(room => room.sharing);
+            const freshAvailability = listing.availabilityConfirmedAt &&
+              Date.now() - new Date(listing.availabilityConfirmedAt).getTime() <= 30 * 86400000;
             const uniqueAmenities = (listing.amenities || []).filter(amenity =>
               listings.every(other => other === listing || !(other.amenities || []).includes(amenity)));
           %>
             <li><strong><%= listing.name %>:</strong>
-              <%= total == null ? 'Ask the owner for the full move-in cost.' : 'Listed move-in cost: ' + money(total) + (lowestRoom ? ' (' + lowestRoom.sharing + ' sharing).' : '.') %>
-              <% if(listing.monthlyRent == null && priced.length){ %>Starting rent is unconfirmed.<% } %>
-              <% if(uniqueAmenities.length){ %>Only this PG lists <%= uniqueAmenities.join(', ') %> among your selections.<% } %>
+              <%= costs.total == null ? 'Confirm ' + missingCosts.join(', ') + ' to calculate the move-in cost.' : 'Listed move-in cost is ' + money(costs.total) + (lowestRoom ? ' for ' + lowestRoom.sharing.toLowerCase() + ' sharing.' : '.') %>
+              <%= listing.foodIncluded === true ? 'Meals are listed as included in rent.' : listing.foodIncluded === false ? 'Budget separately for any meals offered.' : 'Ask whether meals are included.' %>
+              <% if(listing.availabilityStatus === 'unavailable'){ %>The listing is marked temporarily unavailable.<% }
+                 else if(vacancyTypes.length && freshAvailability){ %>Vacancies were last reported for <%= vacancyTypes.join(', ') %> sharing. Confirm before visiting.<% }
+                 else { %>Ask which rooms are currently available.<% } %>
+              <% if(uniqueAmenities.length){ %>Among these listings, only this PG lists <%= uniqueAmenities.join(', ') %>.<% } %>
             </li>
           <% } %>
         </ul>

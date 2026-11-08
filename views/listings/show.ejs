@@ -15,51 +15,59 @@
     <span aria-current="page"><%= listing.name %></span>
   </nav>
 
-  <header class="property-heading">
-    <div class="property-heading-copy">
-      <span class="eyebrow"><%= listing.locality %> · <%= listing.propertyCategory %></span>
-      <h1><%= listing.name %></h1>
-      <p class="property-location"><%- include('../partials/icon', { name: 'pin' }) %><span><%= listing.address %></span></p>
-      <% if(!user||user.role==='user'){ %><div class="actions listing-actions property-heading-actions">
-        <% if(user){ %>
-          <form method="post" action="/favorites/<%= listing._id %>">
-            <input type="hidden" name="_csrf" value="<%= csrf %>">
-            <input type="hidden" name="action" value="<%= favoriteIds.has(String(listing._id))?'remove':'add' %>">
-            <input type="hidden" name="returnTo" value="/listings/<%= listing._id %>">
-            <button class="outline small"><%= favoriteIds.has(String(listing._id))?'♥ Saved PG':'♡ Save PG' %></button>
-          </form>
+  <div class="property-hero">
+    <div class="property-media" aria-labelledby="property-photos-title">
+      <div class="property-media-heading">
+        <h2 id="property-photos-title">Photo tour</h2>
+        <% if(photos.length){ %><span class="property-photo-count"><%= photos.length %> <%= photos.length===1?'photo':'photos' %> · Tap to enlarge</span><% } %>
+      </div>
+      <div class="gallery property-gallery <%= photos.length > 2 ? 'property-gallery-mosaic' : photos.length === 2 ? 'property-gallery-pair' : 'property-gallery-single' %>">
+        <% for(const [index, img] of photos.entries()){ %>
+          <figure<% if(index >= 4){ %> class="property-extra-photo"<% } %>>
+            <a class="gallery-photo" href="/media/<%= img.filename %>" data-caption="<%= img.type==='Exterior'?'Building / exterior':img.type %> — <%= listing.name %>" aria-label="View <%= img.type %> photo <%= index+1 %> of <%= photos.length %>">
+              <img width="800" height="600" decoding="async" src="/media/<%= index===0 ? img.filename : img.thumbnail||img.filename %>" alt="<%= img.type %> at <%= listing.name %>" loading="<%= index===0?'eager':'lazy' %>"<% if(index===0){ %> fetchpriority="high"<% } %>>
+              <% if(index === 3 && photos.length > 4){ %><span class="property-more-photos" aria-hidden="true">+<%= photos.length - 4 %> more</span><% } %>
+            </a>
+            <figcaption><%= img.type==='Exterior'?'Building / exterior':img.type %></figcaption>
+          </figure>
         <% } %>
-        <form method="post" action="/compare/<%= listing._id %>">
-          <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <input type="hidden" name="action" value="<%= compareIds.has(String(listing._id))?'remove':'add' %>">
-          <button class="outline small"><%= compareIds.has(String(listing._id))?'Remove from comparison':'Compare this PG +' %></button>
-        </form>
-        <a class="quiet" href="/compare">View comparison →</a>
-      </div><% } %>
+        <% if(!photos.length){ %><div class="photo placeholder"><%- include('../partials/icon', { name: 'photo' }) %><span>Photos coming soon</span></div><% } %>
+      </div>
     </div>
-    <div class="detail-price property-summary-price">
-      <span class="property-price-label">Starting monthly rent</span>
-      <div><strong class="price"><%= money(listing.monthlyRent) %></strong><span class="property-price-period"> / month</span></div>
-      <p class="price-caption"><%= listing.priceConfirmedAt?'Last confirmed '+date(listing.priceConfirmedAt):'Confirm current rent with owner' %></p>
-    </div>
-  </header>
-
-  <div class="property-media" aria-labelledby="property-photos-title">
-    <div class="property-media-heading">
-      <h2 id="property-photos-title">Property photographs</h2>
-      <span class="property-photo-count"><%= photos.length %> <%= photos.length===1?'photo':'photos' %> · Select any photo to view it full size.</span>
-    </div>
-    <div class="gallery property-gallery">
-      <% for(const [index, img] of photos.entries()){ %>
-        <figure>
-          <a class="gallery-photo" href="/media/<%= img.filename %>" data-caption="<%= img.type==='Exterior'?'Building / exterior':img.type %> — <%= listing.name %>" aria-label="View <%= img.type %> photo <%= index+1 %> of <%= photos.length %>">
-            <img width="800" height="600" decoding="async" src="/media/<%= img.thumbnail||img.filename %>" alt="<%= img.type %> at <%= listing.name %>" loading="<%= index===0?'eager':'lazy' %>">
-          </a>
-          <figcaption><%= img.type==='Exterior'?'Building / exterior':img.type %></figcaption>
-        </figure>
-      <% } %>
-      <% if(!photos.length){ %><div class="photo placeholder"><%- include('../partials/icon', { name: 'photo' }) %><span>Photos coming soon</span></div><% } %>
-    </div>
+    <header class="property-heading">
+      <div class="property-heading-copy">
+        <span class="eyebrow"><%= listing.locality %> · <%= listing.propertyCategory %></span>
+        <h1><%= listing.name %></h1>
+        <% if(!user||user.role==='user'){ %><div class="actions listing-actions property-heading-actions">
+          <% if(user){ %>
+            <form method="post" action="/favorites/<%= listing._id %>">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="action" value="<%= favoriteIds.has(String(listing._id))?'remove':'add' %>">
+              <input type="hidden" name="returnTo" value="/listings/<%= listing._id %>">
+              <button class="outline small"><%= favoriteIds.has(String(listing._id))?'♥ Saved PG':'♡ Save PG' %></button>
+            </form>
+          <% } %>
+          <form method="post" action="/compare/<%= listing._id %>">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="action" value="<%= compareIds.has(String(listing._id))?'remove':'add' %>">
+            <button class="outline small"><%= compareIds.has(String(listing._id))?'Remove from comparison':'Compare this PG +' %></button>
+          </form>
+          <a class="quiet" href="/compare">View comparison →</a>
+        </div><% } %>
+      </div>
+      <div class="detail-price property-summary-price">
+        <span class="property-price-label">Starting monthly rent</span>
+        <div class="property-rent"><strong class="price"><%= listing.monthlyRent == null ? 'Ask owner' : money(listing.monthlyRent) %></strong><% if(listing.monthlyRent != null){ %><span class="property-price-period"> / month</span><% } %></div>
+        <p class="price-caption"><%= listing.priceConfirmedAt?'Last confirmed '+date(listing.priceConfirmedAt):'Confirm current rent with owner' %></p>
+        <p class="property-hero-deposit">Security deposit · <strong><%= listing.securityDeposit == null ? "Ask owner" : money(listing.securityDeposit) %></strong></p>
+        <div class="property-hero-links">
+          <a class="button" href="#owner-contact">Contact the owner <span aria-hidden="true">↗</span></a>
+          <a class="property-rent-link" href="#rooms">View room rates <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+        <p class="property-location"><%- include('../partials/icon', { name: 'pin' }) %><span><%= listing.address %></span></p>
+      <a class="property-map-link" href="<%= map.url %>" target="_blank" rel="noopener noreferrer"><%= map.exact ? "Open property in Google Maps" : "Explore the area in Google Maps" %> <span aria-hidden="true">↗</span></a>
+    </header>
   </div>
 
   <% if(photos.length){ %>
@@ -82,20 +90,16 @@
   <div class="detail-layout property-detail-layout">
     <div class="property-detail-main">
       <section class="panel property-section" id="overview" aria-labelledby="overview-title">
-        <div class="property-section-heading"><span class="eyebrow">GET TO KNOW YOUR NEXT HOME</span><h2 id="overview-title">A little about this place</h2></div>
+        <div class="property-section-heading"><h2 id="overview-title">About this PG</h2></div>
         <% if(listing.verification?.method && listing.verification.method!=='unverified'){ %>
           <p class="notice"><%= listing.verification.method==='site-visit'?'A property site visit was recorded':'Supporting documents were reviewed' %> on <%= date(listing.verification.performedAt) %>. This records the stated check only and is not a quality guarantee.</p>
         <% } %>
         <p class="preserve property-description"><%= listing.description %></p>
-        <div class="facts property-facts">
-          <div>Security deposit<strong><%= listing.securityDeposit==null?'Ask owner':money(listing.securityDeposit) %></strong></div>
-          <div>Sharing<strong><%= listing.sharingOptions.join(', ') %></strong></div>
-          <div>Availability<strong><%= listing.availabilityStatus==='unavailable'?'Temporarily unavailable':'Ask owner about availability' %></strong><small>Last confirmed: <%= date(listing.availabilityConfirmedAt) %></small><% if(!listing.availabilityConfirmedAt || Date.now()-new Date(listing.availabilityConfirmedAt)>30*86400000){ %><small>Availability needs a fresh confirmation.</small><% } %></div>
-        </div>
+        <% if(listing.availabilityStatus === 'unavailable'){ %><p class="notice">This property is marked temporarily unavailable.</p><% } %>
       </section>
 
       <section class="panel property-section" id="rooms" aria-labelledby="rooms-title">
-        <div class="property-section-heading"><span class="eyebrow">A ROOM THAT FITS YOUR BUDGET</span><h2 id="rooms-title">Sharing, rent & room availability</h2></div>
+        <div class="property-section-heading"><h2 id="rooms-title">Rooms, rent & availability</h2></div>
         <% if((listing.roomOptions||[]).length){ %>
           <div class="table-scroll">
             <table class="data-table room-pricing-table">
@@ -158,7 +162,7 @@
 
     <aside class="property-sidebar" aria-labelledby="owner-contact-title">
       <div class="panel sticky contact-panel" id="owner-contact">
-        <div class="contact-panel-header"><span class="eyebrow">TAKE THE NEXT STEP</span><h2 id="owner-contact-title">Meet your next home.</h2><p>Ask a question or arrange a visit with the owner.</p></div>
+        <div class="contact-panel-header"><h2 id="owner-contact-title">Contact the owner</h2><p>Ask about rooms or arrange a visit.</p></div>
         <% if(canContact){ %>
           <div class="contact-methods"><p>Authorized contact: <strong><%= listing.contactName %></strong></p><div class="actions"><a class="outline" href="/listings/<%= listing._id %>/contact/call">Call <%= listing.contactPhone %></a><% if(listing.whatsappAllowed){ %><a class="button" href="/listings/<%= listing._id %>/contact/whatsapp" target="_blank" rel="noopener">WhatsApp owner ↗</a><% } %></div></div>
         <% } %>
