@@ -6,32 +6,43 @@
     <a class="outline" href="/listings">Explore more PGs <%- include('partials/icon',{name:'arrow'}) %></a>
   </header>
 
-  <% const hidden=[...favoriteIds].filter(id=>!unavailable.includes(id)); %>
+  <%
+    const hidden = [...favoriteIds].filter(id => !unavailable.includes(id));
+    const visibleDirectoryIds = new Set(directoryEntries.map(entry => String(entry._id)));
+    const hiddenDirectory = [...directoryFavoriteIds].filter(id => !visibleDirectoryIds.has(id));
+  %>
   <div class="student-body">
     <div class="student-toolbar">
-      <div><h2>Your saved places <span class="student-count"><%= total %></span></h2><p><%= total %> currently published <%= total===1?'PG':'PGs' %> in your favorites.</p></div>
+      <div><h2>Your saved places <span class="student-count"><%= total + directoryEntries.length %></span></h2><p><%= total %> owner-listed · <%= directoryEntries.length %> from the public directory</p></div>
       <a class="quiet" href="/compare">Open PG comparison →</a>
     </div>
 
     <% if(listings.length){ %>
-      <%- include('partials/cards') %>
-    <% }else{ %>
+      <%- include('partials/cards', { ownerSaveReturn: '/favorites' }) %>
+    <% }else if(!directoryEntries.length || page > 1){ %>
       <div class="student-empty">
         <span class="empty-orbit" aria-hidden="true"><%- include('partials/icon',{name:'building'}) %></span>
         <span class="student-kicker">A PLACE FOR YOUR FAVOURITES</span>
-        <h2><%= total>0?'No saved PGs on this page.':hidden.length?'Your saved places are currently unavailable.':'Your shortlist starts here.' %></h2>
-        <p><%= total>0?'Return to your first page to see the PGs in your shortlist.':hidden.length?'Unpublished or suspended properties stay private. Browse available PGs, or remove unavailable entries below.':'Tap Save on a PG you like. You can come back here to revisit its photos, rent and room options.' %></p>
-        <a class="button" href="<%= total>0?'/favorites':'/listings' %>"><%= total>0?'View saved PGs':'Explore PGs' %> <%- include('partials/icon',{name:'arrow'}) %></a>
+        <h2><%= page>1?'No saved PGs on this page.':hidden.length||hiddenDirectory.length?'Your saved places are currently unavailable.':'Your shortlist starts here.' %></h2>
+        <p><%= page>1?'Return to your first page to see the PGs in your shortlist.':hidden.length||hiddenDirectory.length?'Browse available PGs, or remove unavailable entries below.':'Tap Save on a PG you like. You can come back here to revisit it.' %></p>
+        <a class="button" href="<%= page>1?'/favorites':'/listings' %>"><%= page>1?'View saved PGs':'Explore PGs' %> <%- include('partials/icon',{name:'arrow'}) %></a>
       </div>
     <% } %>
     <%- include('partials/pagination',{page,pages,base:'/favorites?'}) %>
+    <% if(directoryEntries.length && page === 1){ %>
+      <div class="student-toolbar"><h2>Saved directory PGs</h2></div>
+      <%- include('partials/directory-cards',{entries:directoryEntries,directorySaveReturn:'/favorites'}) %>
+    <% } %>
 
-    <% if(hidden.length){ %>
+    <% if(hidden.length || hiddenDirectory.length){ %>
       <section class="student-panel unavailable-panel" aria-labelledby="unavailable-saved-title">
-        <div class="student-toolbar"><div><h2 id="unavailable-saved-title">Unavailable saved properties <span class="student-count"><%= hidden.length %></span></h2><p>These properties are no longer public. Remove an entry to free shortlist space.</p></div><span class="student-guidance"><%- include('partials/icon',{name:'lock'}) %> Private details stay hidden</span></div>
+        <div class="student-toolbar"><div><h2 id="unavailable-saved-title">Unavailable saved properties <span class="student-count"><%= hidden.length + hiddenDirectory.length %></span></h2><p>These properties are no longer public. Remove an entry to free shortlist space.</p></div><span class="student-guidance"><%- include('partials/icon',{name:'lock'}) %> Private details stay hidden</span></div>
         <div class="unavailable-list">
           <% for(const id of hidden){ %>
             <div class="unavailable-row"><div><strong>Unavailable PG</strong><span>Saved reference <%= id.slice(-6) %></span></div><form method="post" action="/favorites/<%= id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="action" value="remove"><button class="outline small">Remove unavailable PG <%= id.slice(-6) %></button></form></div>
+          <% } %>
+          <% for(const id of hiddenDirectory){ %>
+            <div class="unavailable-row"><div><strong>Unavailable directory PG</strong><span>Saved reference <%= id.slice(-6) %></span></div><form method="post" action="/favorites/directory/<%= id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="action" value="remove"><button class="outline small">Remove unavailable PG <%= id.slice(-6) %></button></form></div>
           <% } %>
         </div>
       </section>

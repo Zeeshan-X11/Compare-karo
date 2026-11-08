@@ -10,7 +10,7 @@ function registerDirectory({ app, auth, role, wrap }) {
     const term = typeof req.query.q==='string'?req.query.q.trim().slice(0,80):'';
     const result = await directory.search(category, page, 12, term);
     res.render('directory', { ...result, category, term, page, pages: Math.ceil(result.total / 12),
-      map: market.maps({ locality: 'Rajanukunte' }), title: 'Rajanukunte PG directory' });
+      title: 'Rajanukunte PG directory' });
   }));
   app.get('/admin/directory', auth, role(['admin']), wrap(async (req, res) => {
     const page = market.page(req.query.page);

@@ -12,6 +12,7 @@ const session = require("express-session"),
 const Listing = require("./models/listing"),
   User = require("./models/user"),
   Inquiry = require("./models/inquiry");
+const { photoOrigins } = require("./models/directory-entry");
 const { filters, amenities, sharing, scalar } = require("./lib/filters"),
   { parse, publishable, submissionIssues } = require("./lib/input");
 const {
@@ -34,6 +35,7 @@ const {audit}=require('./lib/audit');
 const {createStorage}=require('./lib/storage');
 const publication = require("./lib/publication");
 const market = require("./lib/marketplace");
+const { exactLocationUrl } = require("./lib/maps");
 const { registerPortalRoutes } = require("./routes/portals");
 const { localities } = require('./lib/localities');
 const directory = require('./lib/directory');
@@ -73,6 +75,7 @@ function createApp(options = {}) {
     coverPhoto,
     submissionIssues,
     favoriteIds: new Set(),
+    directoryFavoriteIds: new Set(),
     compareIds: new Set(),
     authorizationTypes,
     market,
@@ -105,8 +108,8 @@ function createApp(options = {}) {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
           styleSrc: ["'self'"],
-          imgSrc: ["'self'", "blob:"],
-          frameSrc: ['https://www.openstreetmap.org'],
+          imgSrc: ["'self'", "blob:", ...photoOrigins],
+          frameSrc: ["'none'"],
           formAction: ["'self'"],
           upgradeInsecureRequests: production ? [] : null,
         },
@@ -151,7 +154,7 @@ function createApp(options = {}) {
       res.set('Cache-Control','private, no-store');
       req.user = req.session.userId
         ? await User.findById(req.session.userId).select(
-            "name email role favorites suspended suspensionReason sessionVersion emailVerifiedAt mfa.enabled",
+            "name email role favorites directoryFavorites suspended suspensionReason sessionVersion emailVerifiedAt mfa.enabled",
           )
         : null;
       if (req.user || req.session.pendingMfaUserId || /^\/(login|signup|account|owner|admin|inquiries|favorites|compare|reports|reset-password|forgot-password|mfa)/.test(req.path)) res.set('Cache-Control','private, no-store');
@@ -165,6 +168,7 @@ function createApp(options = {}) {
       }
       if(req.user && (req.user.sessionVersion||0)!==(req.session.sessionVersion||0)){req.session.userId=null;req.user=null;}
       res.locals.favoriteIds = new Set((req.user?.favorites || []).map(String));
+      res.locals.directoryFavoriteIds = new Set((req.user?.directoryFavorites || []).map(String));
       res.locals.compareIds = new Set(
         (req.session.comparison || []).map(String),
       );
@@ -493,6 +497,7 @@ function createApp(options = {}) {
       input.coordinates &&
       oldCoordinates.latitude === input.coordinates.latitude &&
       oldCoordinates.longitude === input.coordinates.longitude &&
+      oldCoordinates.mapUrl === input.coordinates.mapUrl &&
       listing.address === input.address &&
       listing.locality === input.locality
     )
@@ -921,8 +926,7 @@ function createApp(options = {}) {
         l.coordinates.verified = Boolean(
           req.body.locationReviewed === "yes" &&
           l.coordinates.publicationAuthorized &&
-          Number.isFinite(l.coordinates.latitude) &&
-          Number.isFinite(l.coordinates.longitude),
+          exactLocationUrl(l.coordinates),
         );
         if (l.listingStatus !== "submitted" || !publishable(l))
           throw problem(400,"Only complete submitted listings may be approved.");

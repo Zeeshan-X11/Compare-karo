@@ -6,6 +6,7 @@ const Listing = require("../models/listing"),
 const publication = require("../lib/publication"),
   market = require("../lib/marketplace");
 const { scalar } = require("../lib/filters");
+const directory = require("../lib/directory");
 const { photoTypes } = require("../lib/photos");
 const oid = (v) => new mongoose.Types.ObjectId(v);
 const safeReturn = (value, fallback) =>
@@ -27,8 +28,10 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
         { createdAt: -1 },
         page,
       );
+      const directoryEntries = await directory.saved(req.user.directoryFavorites || []);
       res.render("favorites", {
         listings,
+        directoryEntries,
         page,
         pages: Math.ceil(total / 12),
         total,
@@ -70,6 +73,34 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
           );
       }
       res.redirect(safeReturn(req.body.returnTo, "/favorites"));
+    }),
+  );
+  app.post(
+    "/favorites/directory/:id",
+    auth,
+    wrap(async (req, res) => {
+      const id = oid(req.params.id);
+      const { action, returnTo } = req.body;
+      if (action === "remove") {
+        await User.updateOne({ _id: req.user._id }, { $pull: { directoryFavorites: id } });
+      } else if (action === "add") {
+        if (!(await directory.exists(id))) return res.sendStatus(404);
+        const result = await User.updateOne(
+          {
+            _id: req.user._id,
+            $or: [
+              { directoryFavorites: id },
+              { $expr: { $lt: [{ $size: { $ifNull: ["$directoryFavorites", []] } }, 100] } },
+            ],
+          },
+          { $addToSet: { directoryFavorites: id } },
+        );
+        if (!result.matchedCount) throw problem(400, "Remove a directory PG before saving another.");
+      } else {
+        throw problem(400, "Choose add or remove.");
+      }
+      if (req.accepts(["html", "json"]) === "json") return res.json({ saved: action === "add" });
+      res.redirect(returnTo === "/directory/rajanukunte" ? returnTo : safeReturn(returnTo, "/favorites"));
     }),
   );
   app.get(

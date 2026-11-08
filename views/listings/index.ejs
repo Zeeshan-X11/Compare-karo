@@ -43,18 +43,21 @@ for(const label of selectedAmenities){const params=new URLSearchParams(searchPar
       </nav>
       <% if(directoryResults?.total){ %>
       <section class="directory-preview" aria-labelledby="directory-preview-title">
-        <div class="directory-preview-heading"><div><span class="student-kicker">RAJANUKUNTE</span><h2 id="directory-preview-title"><%= directoryResults.total %> public directory entries</h2><p>Publicly sourced PGs · Not verified by PG Dekho.</p></div><a class="outline small" href="/directory/rajanukunte<%= category?'?category='+encodeURIComponent(category):'' %>">View directory & map ↗</a></div>
+        <div class="directory-preview-heading"><div><h2 id="directory-preview-title"><%= directoryResults.total %> public directory entries</h2><p>Publicly sourced PGs · Not verified by PG Dekho.</p></div><a class="outline small" href="/directory/rajanukunte<%= category?'?category='+encodeURIComponent(category):'' %>">View full directory ↗</a></div>
         <p class="directory-filter-note">Category applies here. Budget, sharing, meals and amenity filters apply to owner-listed PGs below; directory rent and vacancies are unconfirmed.</p>
-        <%- include('../partials/directory-cards',{entries:directoryResults.entries}) %>
       </section>
-      <% }else if(area==='Rajanukunte'){ %><p class="notice">Explore publicly sourced places in the <a href="/directory/rajanukunte">Rajanukunte directory & free map ↗</a>. Availability is unconfirmed.</p><% } %>
+      <% }else if(area==='Rajanukunte'){ %><p class="notice">Explore publicly sourced places in the <a href="/directory/rajanukunte">Rajanukunte directory ↗</a>. Availability is unconfirmed.</p><% } %>
       <div class="results-toolbar">
         <div><h2><%= total %> owner-listed <%= total===1?'PG':'PGs' %><span><%= area?' in '+area:' to explore' %></span></h2><p>Browse published properties from local owners.</p></div>
         <div class="sort-control"><label for="pg-sort">Sort by</label><select id="pg-sort" name="sort" form="pg-filters"><option value="recent">Recently added</option><option value="rent-asc" <%= q.sort==='rent-asc'?'selected':'' %>>Rent: low to high</option><option value="rent-desc" <%= q.sort==='rent-desc'?'selected':'' %>>Rent: high to low</option></select><button type="submit" form="pg-filters" class="outline small" aria-label="Apply sort order">Apply</button></div>
       </div>
       <% if(chips.length){ %><div class="active-filters" aria-label="Active filters"><% for(const chip of chips){ %><a href="<%= chip.url %>" aria-label="Remove filter: <%= chip.label %>"><%= chip.label %><%- include('../partials/icon',{name:'close'}) %></a><% } %><a class="clear-active" href="/listings">Clear all</a></div><% } %>
-      <% if(listings.length){ %><%- include('../partials/cards') %><% }else if(directoryResults?.total){ %>
-        <div class="panel directory-no-owners"><h2>No matching owner-listed PGs yet.</h2><p>Approved owner submissions will appear here. You can explore the public directory above while new properties are reviewed.</p></div>
+      <% if(listings.length || directoryResults?.entries.length){ %>
+        <% if(!listings.length){ %><p class="muted directory-filter-note">No owner-listed PGs on this page. Browse the public directory cards below.</p><% } %>
+        <div class="directory-grid directory-listings explore-card-grid">
+          <% if(listings.length){ %><%- include('../partials/cards', { inSharedGrid: true }) %><% } %>
+          <% if(directoryResults?.entries.length){ %><%- include('../partials/directory-cards', { entries: directoryResults.entries, directorySaveReturn: '/listings', inSharedGrid: true }) %><% } %>
+        </div>
       <% }else{ %>
         <div class="student-empty search-empty">
           <div class="search-empty-art" aria-hidden="true"><span class="art-dots"></span><span class="art-building"><%- include('../partials/icon',{name:'building'}) %></span><span class="art-search"><%- include('../partials/icon',{name:'search'}) %></span></div>

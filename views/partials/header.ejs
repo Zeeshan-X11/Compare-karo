@@ -23,7 +23,7 @@
     <% } %>
     <% if(user){ const roleName=user.role==='user'?'Student / seeker':user.role==='owner'?'PG owner':'Admin'; %>
       <details class="profile"><summary><span class="profile-avatar" aria-hidden="true"><%= user.name?.trim().charAt(0).toUpperCase()||'N' %></span><span class="profile-meta"><span><%= user.name %></span><small><%= roleName %></small></span><span class="profile-chevron" aria-hidden="true">⌄</span></summary>
-        <div><span class="account-role"><%= roleName %></span><a href="/account">My account</a><% if(user.role!=='user'){ %><a href="/account/security">Account security</a><% } %>
+        <div><span class="account-role"><%= roleName %></span><a href="/account">My profile</a><% if(user.role!=='user'){ %><a href="/account/security">Account security</a><% } %>
         <% if(user.role==='user'){ %><a href="/favorites">Saved PGs</a><a href="/compare">Compare PGs</a><a href="/inquiries">My inquiries</a><a href="/reports">My reports</a>
         <% }else if(user.role==='owner'){ %><a href="/owner">My properties</a><a href="/owner?tab=inquiries">Inquiry inbox</a><a href="/listings">Browse public website</a>
         <% }else if(user.role==='admin'){ %><a href="/admin">Admin review</a><a href="/admin/owners">Owner management</a><a href="/admin/directory">Public directory</a><a href="/listings">Preview public listings</a><a href="/owner">My own properties</a><% } %>

@@ -76,6 +76,7 @@ const listingSchema = new mongoose.Schema(
     coordinates: {
       latitude: Number,
       longitude: Number,
+      mapUrl: { type: String, maxlength: 2048 },
       verified: { type: Boolean, default: false },
       publicationAuthorized: { type: Boolean, default: false },
     },

@@ -129,11 +129,18 @@
       <label class="check"><input type="checkbox" name="contactPublic" value="yes" <%= listing.contactPublic?'checked':'' %>>I authorize public display of this contact name and phone.</label>
       <label class="check"><input type="checkbox" name="whatsappAllowed" value="yes" <%= listing.whatsappAllowed?'checked':'' %>>I authorize WhatsApp inquiries on the contact number above (requires public contact permission).</label>
       <details class="owner-form-group"><summary>Map location & source <span>Optional details</span></summary>
-      <p class="muted">Optional exact coordinates. The admin must review them before an exact Google Maps link is published. Otherwise visitors see a locality-only map.</p>
-      <div class="two-cols">
-      <label>Latitude<input name="coordinateLatitude" type="number" step="any" min="-90" max="90" value="<%= listing.coordinates?.latitude==null?'':listing.coordinates.latitude %>"></label>
-      <label>Longitude<input name="coordinateLongitude" type="number" step="any" min="-180" max="180" value="<%= listing.coordinates?.longitude==null?'':listing.coordinates.longitude %>"></label></div>
-      <label class="check"><input type="checkbox" name="locationPublic" value="yes" <%= listing.coordinates?.publicationAuthorized?'checked':'' %>>I authorize publication of these exact property coordinates after admin review.</label>
+      <div data-location-picker>
+        <p class="muted">Use your current location while at the PG, or paste its share link from Google Maps.</p>
+        <input type="hidden" name="coordinateLatitude" value="<%= listing.coordinates?.latitude ?? '' %>">
+        <input type="hidden" name="coordinateLongitude" value="<%= listing.coordinates?.longitude ?? '' %>">
+        <div class="actions" data-location-actions hidden>
+          <button type="button" class="outline small" data-use-location><%- include('../partials/icon', { name: 'pin' }) %> Use current location</button>
+          <button type="button" class="quiet text-button" data-clear-location>Clear location</button>
+        </div>
+        <label>Google Maps share link<input type="url" name="googleMapUrl" maxlength="2048" placeholder="https://maps.app.goo.gl/…" value="<%= listing.coordinates?.mapUrl || '' %>"></label>
+        <p class="muted" data-location-status role="status"><%= listing.coordinates?.mapUrl ? 'Google Maps link saved.' : listing.coordinates?.latitude != null && listing.coordinates?.longitude != null ? 'A property pin is saved.' : '' %></p>
+        <label class="check"><input type="checkbox" name="locationPublic" value="yes" <%= listing.coordinates?.publicationAuthorized?'checked':'' %>>I authorize publication of this property location after admin review.</label>
+      </div>
       <label>Source URL, if available<input type="url" name="sourceUrl" value="<%= listing.sourceUrl||'' %>"></label>
       <label>Source date<input type="date" name="sourceDate" value="<%= listing.sourceDate?new Date(listing.sourceDate).toISOString().slice(0,10):'' %>"></label>
       </details>

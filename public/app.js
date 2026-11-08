@@ -1,5 +1,77 @@
 const toggle = document.querySelector(".nav-toggle");
 const nav = document.getElementById("navigation");
+for (const photo of document.querySelectorAll('.directory-photo img')) {
+  const removeUnavailablePhoto = () => {
+    const frame = photo.closest('.directory-photo');
+    frame.querySelector('.directory-photo-placeholder').hidden = false;
+    photo.closest('a').remove();
+  };
+  photo.addEventListener('error', removeUnavailablePhoto, { once: true });
+  if (photo.complete && !photo.naturalWidth) removeUnavailablePhoto();
+}
+const saveForms = document.querySelectorAll('form[data-save-pg]');
+if (saveForms.length) {
+  const notice = document.createElement('div');
+  notice.className = 'save-notice';
+  notice.setAttribute('role', 'status');
+  document.body.append(notice);
+  let noticeTimer;
+
+  function showSaveNotice(message) {
+    clearTimeout(noticeTimer);
+    notice.textContent = message;
+    notice.classList.add('is-visible');
+    noticeTimer = setTimeout(() => {
+      notice.classList.remove('is-visible');
+      notice.textContent = '';
+    }, 2800);
+  }
+
+  for (const form of saveForms) {
+    const button = form.querySelector('button');
+    const label = button.querySelector('[data-save-label]');
+    const action = form.elements.namedItem('action');
+    let pending = false;
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (pending) return;
+      pending = true;
+      button.setAttribute('aria-busy', 'true');
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: new URLSearchParams(new FormData(form)),
+        });
+        if (response.redirected && new URL(response.url).pathname === '/login') {
+          showSaveNotice('Your session ended. Log in to save PGs.');
+          return;
+        }
+        if (!response.ok) throw Error('Save request failed');
+        const { saved } = await response.json();
+        if (typeof saved !== 'boolean') throw Error('Unexpected save response');
+        action.value = saved ? 'remove' : 'add';
+        button.dataset.saved = String(saved);
+        label.textContent = saved ? 'Saved' : 'Save PG';
+        button.setAttribute('aria-label', saved
+          ? 'Remove ' + form.dataset.savePg + ' from saved PGs'
+          : 'Save ' + form.dataset.savePg);
+        if (saved && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          button.querySelector('.ui-icon').animate(
+            [{ transform: 'scale(.86)' }, { transform: 'scale(1.34)' }, { transform: 'scale(1)' }],
+            { duration: 320, easing: 'cubic-bezier(.2,.75,.3,1)' },
+          );
+        }
+        showSaveNotice(saved ? 'Added to Saved PGs' : 'Removed from Saved PGs');
+      } catch {
+        showSaveNotice('Couldn’t update Saved PGs. Try again.');
+      } finally {
+        pending = false;
+        button.removeAttribute('aria-busy');
+      }
+    });
+  }
+}
 for (const link of document.querySelectorAll('[data-nav]')) {
   const destination = new URL(link.href);
   if (destination.pathname === location.pathname && destination.search === location.search)

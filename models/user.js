@@ -6,6 +6,7 @@ module.exports = mongoose.model(
       name: { type: String, required: true, maxlength: 80 },
       email: { type: String, unique: true, required: true },
       favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Listing" }],
+      directoryFavorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "DirectoryEntry" }],
       suspended: { type: Boolean, default: false },
       suspensionReason: String,
       suspendedAt: Date,

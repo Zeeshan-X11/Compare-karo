@@ -41,7 +41,7 @@ Photos are decoded with pixel limits, re-encoded as WebP and given thumbnails. L
 
 Sessions are HttpOnly/SameSite with Secure cookies in production and a bounded MongoDB session store. Private/session HTML uses no-store. Mutation routes require CSRF and ownership/role checks. Production owners need verified email and production admins need verified email plus TOTP MFA. Recovery tokens are hashed, expire and are one-use; resets invalidate sessions. MFA secrets are encrypted and recovery codes are hashed and single-use.
 
-Resend must be configured before verification/recovery emails can be sent. The app distinguishes provider acceptance, delivery state and link-confirmed address ownership. With no provider it reports the feature unavailable. Phone numbers are plausibility-checked, not ownership-verified. WhatsApp and Google Maps use ordinary external links. Free OpenStreetMap embeds show Rajanukunte or reviewed, consented property coordinates. No SMS provider or booking/payment processing is configured.
+Resend must be configured before verification/recovery emails can be sent. The app distinguishes provider acceptance, delivery state and link-confirmed address ownership. With no provider it reports the feature unavailable. Phone numbers are plausibility-checked, not ownership-verified. WhatsApp and Google Maps use ordinary external links. Google Maps links show reviewed, consented property coordinates when available. No SMS provider or booking/payment processing is configured.
 
 The chosen deployment is Linux Docker with Caddy, ClamAV, durable volumes and MongoDB Atlas. Vercel Functions are rejected for this filesystem deployment; no serverless/local-disk durability claim is made. Hosting/email/DNS/backup accounts, real scanner engine checks, Atlas staging and production cutover require operator setup. [Deployment, backup and recovery instructions](docs/PRODUCTION.md) contain all environment variable names and exact commands.
 
@@ -62,4 +62,4 @@ GitHub CI is configured for lint, tests, build, dependency audit, Docker build a
 
 ## Rajanukunte public directory
 
-Nine sourced PG entries are available separately from owner-approved listings, with clear unverified labels, source dates, category filters, free maps and admin hide/restore controls. Import is explicit and idempotent; existing user accounts and owner records are untouched. See [directory import, sources and verification](docs/RAJANUKUNTE-DIRECTORY.md). This is not a complete neighborhood census or a live vacancy feed.
+Nine sourced PG entries are available separately from owner-approved listings, with clear unverified labels, source dates, category filters, Google Maps links and admin hide/restore controls. Import is explicit and idempotent; existing user accounts and owner records are untouched. See [directory import, sources and verification](docs/RAJANUKUNTE-DIRECTORY.md). This is not a complete neighborhood census or a live vacancy feed.

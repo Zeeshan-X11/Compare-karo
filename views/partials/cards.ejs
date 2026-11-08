@@ -1,1 +1,59 @@
-<% if(!listings.length){ %><div class="empty"><span class="empty-icon">⌂</span><h3>A little space for something good.</h3><p>We're onboarding trusted local PGs. Check back soon.</p><% if(!user||user.role!=='user'){ %><p>Have a property in Rajanukunte?</p><% } %><% if(!user||user.role!=='user'){ %><a href="/list-property" class="outline">List your PG ↗</a><% } %></div><% }else{ %><div class="cards"><% for(const l of listings){const photo=coverPhoto(l); %><article class="property-card"><a href="/listings/<%= l._id %>" class="photo"><% if(photo){ %><img loading="lazy" width="800" height="600" decoding="async" src="/media/<%= (photo.thumbnail||photo.filename) %>" alt="<%= photo.type %> at <%= l.name %>"><% }else{ %><span>⌂<small>Photos coming soon</small></span><% } %></a><div class="card-body"><span class="eyebrow"><%= l.locality %> · <%= l.propertyCategory %></span><h3><a href="/listings/<%= l._id %>"><%= l.name %></a></h3><p><%= l.address %></p><div class="chips"><% for(const s of l.sharingOptions||[]){ %><span><%= s %> sharing</span><% } %><% if((l.amenities||[]).includes('Wi-Fi')){ %><span>Wi-Fi</span><% } if((l.foodOptions||[]).length){ %><span>Meals offered</span><% } %></div><strong><%= money(l.monthlyRent) %></strong><% if(l.monthlyRent!=null){ %><small> / month, starting rent</small><% } %><p class="muted">Ask owner about availability · Last confirmed: <%= date(l.availabilityConfirmedAt) %></p><% if(!user||user.role==='user'){ %><div class="card-tools"><% if(user){ %><form method="post" action="/favorites/<%= l._id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="action" value="<%= favoriteIds.has(String(l._id))?'remove':'add' %>"><input type="hidden" name="returnTo" value="/listings"><button class="outline small"><%= favoriteIds.has(String(l._id))?'♥ Saved':'♡ Save' %></button></form><% } %><form method="post" action="/compare/<%= l._id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="action" value="<%= compareIds.has(String(l._id))?'remove':'add' %>"><button class="outline small"><%= compareIds.has(String(l._id))?'Remove comparison':'Compare +' %></button></form></div><% } %><a class="detail-link" href="/listings/<%= l._id %>">View details ↗</a></div></article><% } %></div><% } %>
+<% if(!listings.length){ %><div class="empty"><span class="empty-icon">⌂</span><h3>A little space for something good.</h3><p>We're onboarding trusted local PGs. Check back soon.</p><% if(!user||user.role!=='user'){ %><p>Have a property in Rajanukunte?</p><% } %><% if(!user||user.role!=='user'){ %><a href="/list-property" class="outline">List your PG ↗</a><% } %></div>
+<% }else{ const standalone = typeof inSharedGrid === 'undefined' || !inSharedGrid; %>
+  <% if(standalone){ %><div class="directory-grid directory-listings"><% } %>
+  <% for(const listing of listings){
+    const id = String(listing._id);
+    const href = '/listings/' + id;
+    const photo = coverPhoto(listing);
+    const saved = favoriteIds.has(id);
+    const compared = compareIds.has(id);
+  %>
+    <article class="directory-card directory-listing-card">
+      <div class="directory-photo">
+        <div class="directory-photo-placeholder" <%= photo ? 'hidden' : '' %>>
+          <%- include('icon', { name: 'building' }) %><span>Photo unavailable</span>
+        </div>
+        <% if(photo){ %>
+          <a href="<%= href %>"><img loading="lazy" decoding="async" width="800" height="600" src="/media/<%= photo.thumbnail || photo.filename %>" alt="<%= photo.type %> at <%= listing.name %>"></a>
+        <% } %>
+        <% if(listing.monthlyRent != null){ %>
+          <span class="directory-price"><%= money(listing.monthlyRent) %><small> / mo from</small></span>
+        <% } %>
+      </div>
+      <div class="directory-card-body">
+        <div class="directory-card-meta"><span class="directory-category"><%= listing.propertyCategory %></span><span class="owner-card-status">Owner-listed</span></div>
+        <h3><a href="<%= href %>"><%= listing.name %></a></h3>
+        <p class="directory-address"><%- include('icon', { name: 'pin' }) %><span title="<%= listing.address %>"><%= listing.address %></span></p>
+        <details class="directory-card-details">
+          <summary>Listing info</summary>
+          <p><%= listing.address %></p>
+          <% if(listing.sharingOptions?.length){ %><p>Sharing: <%= listing.sharingOptions.join(', ') %></p><% } %>
+          <% if(listing.amenities?.length){ %><p>Facilities: <%= listing.amenities.join(' · ') %></p><% } %>
+          <% if(listing.foodOptions?.length){ %><p>Meals offered</p><% } %>
+          <p>Availability last confirmed: <%= date(listing.availabilityConfirmedAt) %></p>
+        </details>
+        <div class="directory-actions">
+          <a class="button small" href="<%= href %>" aria-label="View details for <%= listing.name %>">View listing ↗</a>
+          <% if(!user || user.role === 'user'){ %>
+            <form method="post" action="/compare/<%= id %>">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="action" value="<%= compared ? 'remove' : 'add' %>">
+              <button class="outline small" type="submit" aria-label="<%= compared ? 'Remove ' + listing.name + ' from comparison' : 'Compare ' + listing.name %>"><%= compared ? 'Compared' : 'Compare' %></button>
+            </form>
+            <% if(user){ %>
+              <form method="post" action="/favorites/<%= id %>">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input type="hidden" name="action" value="<%= saved ? 'remove' : 'add' %>">
+                <input type="hidden" name="returnTo" value="<%= typeof ownerSaveReturn === 'undefined' ? '/listings' : ownerSaveReturn %>">
+                <button class="outline small directory-save" type="submit" data-saved="<%= saved %>" aria-label="<%= saved ? 'Remove ' + listing.name + ' from saved PGs' : 'Save ' + listing.name %>"><%- include('icon', { name: 'heart' }) %></button>
+              </form>
+            <% }else{ %>
+              <a class="outline small directory-save" href="/login"><%- include('icon', { name: 'heart' }) %><span class="sr-only">Log in to save</span></a>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+    </article>
+  <% } %>
+  <% if(standalone){ %></div><% } %>
+<% } %>

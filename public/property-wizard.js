@@ -73,3 +73,60 @@ if (ownerWizard) {
   }, true);
   show(0, false);
 }
+
+const locationPicker = document.querySelector('[data-location-picker]');
+if (locationPicker) {
+  const latitude = locationPicker.querySelector('[name="coordinateLatitude"]');
+  const longitude = locationPicker.querySelector('[name="coordinateLongitude"]');
+  const link = locationPicker.querySelector('[name="googleMapUrl"]');
+  const consent = locationPicker.querySelector('[name="locationPublic"]');
+  const status = locationPicker.querySelector('[data-location-status]');
+  const useLocation = locationPicker.querySelector('[data-use-location]');
+  const clearLocation = locationPicker.querySelector('[data-clear-location]');
+  let requestId = 0;
+  locationPicker.querySelector('[data-location-actions]').hidden = false;
+
+  function stopCapture() {
+    requestId++;
+    useLocation.disabled = false;
+  }
+
+  locationPicker.closest('form').addEventListener('submit', event => {
+    if (!useLocation.disabled) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    status.textContent = 'Wait for your location, or paste a Google Maps link to continue.';
+  }, true);
+  link.addEventListener('input', () => {
+    stopCapture();
+    if (link.value.trim()) latitude.value = longitude.value = '';
+    status.textContent = latitude.value ? 'A property pin is selected.' : '';
+  });
+  clearLocation.addEventListener('click', () => {
+    stopCapture();
+    latitude.value = longitude.value = link.value = '';
+    consent.checked = false;
+    status.textContent = 'Location cleared. Save the form to apply the change.';
+  });
+  useLocation.addEventListener('click', () => {
+    if (!navigator.geolocation || !window.isSecureContext) {
+      status.textContent = 'Current location is unavailable here. Paste a Google Maps link instead.';
+      return;
+    }
+    const captureId = ++requestId;
+    useLocation.disabled = true;
+    status.textContent = 'Getting your current location…';
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      if (captureId !== requestId) return;
+      stopCapture();
+      latitude.value = coords.latitude.toFixed(6);
+      longitude.value = coords.longitude.toFixed(6);
+      link.value = '';
+      status.textContent = 'Current location selected. Save the form to submit it.';
+    }, () => {
+      if (captureId !== requestId) return;
+      stopCapture();
+      status.textContent = 'Couldn’t get your location. Check your browser permission or paste a Google Maps link.';
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  });
+}

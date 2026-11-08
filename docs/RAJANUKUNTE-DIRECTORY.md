@@ -34,7 +34,7 @@ The seven excluded historical entries are Zolo Hercules, Zesto Blue Pearl, Green
 
 Name/street search escapes regex input. Category filtering and 12-entry pagination run in MongoDB. Owner-listing budget/amenity filters are not applied or falsely advertised as applying to directory advertisements. Directory entries do not expose PG Dekho inquiry/favorite/compare actions because they are not owned, approved properties. A verified owner claim/deduplication workflow is not implemented.
 
-## Local guide and free maps
+## Local guide and Google Maps links
 
 The directory includes four official references:
 
@@ -43,7 +43,7 @@ The directory includes four official references:
 - [Raksha Health Care](https://www.rakshahealth.in/contact); current services/hours must be confirmed.
 - [South Western Railway's Rajankunti station reference](https://swr.indianrailways.gov.in/uploads/files/1591161631577-HELPLINE%20NUMBERS.pdf), station code RNN. This is not a current timetable.
 
-OpenStreetMap renders the locality; [OSM relation 17417762](https://www.openstreetmap.org/relation/17417762) supplies the area bounds. Directory map links are name/address searches, not verified pins. Approved owner properties get a precise map only with reviewed coordinates and publication consent. No Google API key or billing is required; Google Maps links are ordinary external searches. OSM embeds retain attribution and lazy loading. Follow the [OSM usage policy](https://operations.osmfoundation.org/policies/tiles/); no SLA or unlimited capacity is promised.
+Directory cards open Google Maps using the location from the public listing when available. Other cards search Google Maps by name and listed address. Owner listings link to exact coordinates only when reviewed and authorized for publication. These external links require no Google API key.
 
 ## Safe rollout
 

@@ -17,7 +17,7 @@ const password='isolated-test-password-123';
 async function csrf(agent,url='/account'){const r=await agent.get(url);const m=r.text.match(/name="_csrf" value="([^"]+)"/);if(m)return m[1];return (await agent.get('/login')).text.match(/name="_csrf" value="([^"]+)"/)[1];}
 async function post(agent,url,data={}){const token=await csrf(agent);return agent.post(url).type('form').send({_csrf:token,...data});}
 const details={name:'TEST ONLY — Production regression',description:'This is an isolated automated test property, never real inventory. The complete description verifies safe owner submission, approval workflow, room availability and student contact functionality.',locality:'Rajanukunte',address:'TEST ONLY address, not an actual home',propertyCategory:'Men',sharingOptions:'Double',rentDouble:'12000',roomsTotalDouble:'4',roomsAvailableDouble:'2',monthlyRent:'12000',securityDeposit:'20000',oneTimeFee:'0',contactName:'Test Owner',contactPhone:'9876501234',ownerAuthorized:'yes',contactPublic:'yes',whatsappAllowed:'yes',coordinateLatitude:'13.1',coordinateLongitude:'77.5',locationPublic:'yes',availabilityStatus:'available'};
-async function submitNew(agent=owner){let req=agent.post('/owner').set('x-csrf-token',await csrf(agent));for(const [key,value]of Object.entries(details))req=req.field(key,value);const result=await req.field('photoRights','yes').field('authorizationDeclaration','yes').field('authorizationType','Trade licence').attach('buildingPhoto',png,{filename:'TEST-ONLY.png',contentType:'image/png'}).attach('authorizationFiles',png,{filename:'TEST-ONLY-document.png',contentType:'image/png'});assert.equal(result.status,302,result.text.slice(0,300));return (await Listing.findOne({ownerId}).sort({createdAt:-1}))._id;}
+async function submitNew(agent=owner, fields=details){let req=agent.post('/owner').set('x-csrf-token',await csrf(agent));for(const [key,value]of Object.entries(fields))req=req.field(key,value);const result=await req.field('photoRights','yes').field('authorizationDeclaration','yes').field('authorizationType','Trade licence').attach('buildingPhoto',png,{filename:'TEST-ONLY.png',contentType:'image/png'}).attach('authorizationFiles',png,{filename:'TEST-ONLY-document.png',contentType:'image/png'});assert.equal(result.status,302,result.text.slice(0,300));return (await Listing.findOne({ownerId}).sort({createdAt:-1}))._id;}
 async function approve(property=id){const r=await post(admin,'/admin/'+property,{action:'approve',reviewed:'yes',authorizationReviewed:'yes',locationReviewed:'yes'});assert.equal(r.status,302,r.text.slice(0,300));}
 before(async()=>{
   mongo=await MongoMemoryServer.create();await mongoose.connect(mongo.getUri('nestly_production_regressions'));
@@ -35,6 +35,25 @@ after(async()=>{if(server)await new Promise(r=>server.close(r));await mongoose.d
 test('new publication requires complete review and keeps private evidence out of snapshots',async()=>{
   const l=await Listing.findById(id);assert.equal(l.publicSnapshot.publicationPolicyVersion,2);assert.equal(l.authorizationDocuments[0].scanStatus,'clean');
   assert.equal((await request(server).get('/listings/'+id)).status,200);assert.ok(!('authorizationDocuments' in l.publicSnapshot));assert.ok(!('approvedAuthorizationDocuments' in l.publicSnapshot));
+});
+test('owners can paste a Google Maps link and only the reviewed, consented link becomes public', async () => {
+  const googleMapUrl = 'https://maps.app.goo.gl/IsolatedTestOnly';
+  const fields = { ...details, name: 'TEST ONLY — Maps link', coordinateLatitude: '', coordinateLongitude: '', googleMapUrl };
+  const badLink = await post(owner, '/owner', { ...fields, googleMapUrl: 'https://maps.app.goo.gl.example.invalid/Pin' });
+  assert.equal(badLink.status, 400);
+  const property = await submitNew(owner, fields);
+  const review = await admin.get('/admin/' + property);
+  assert.match(review.text, /Check submitted location in Google Maps/);
+  assert.ok(review.text.includes(googleMapUrl));
+  assert.equal((await request(server).get('/listings/' + property)).status, 404);
+  assert.equal(market.maps(await Listing.findById(property)).exact, false);
+  await approve(property);
+  const publicPage = await request(server).get('/listings/' + property);
+  assert.ok(publicPage.text.includes(googleMapUrl));
+  assert.equal((await post(owner, '/owner/' + property, { ...fields, googleMapUrl: '', intent: 'draft' })).status, 302);
+  const cleared = await request(server).get('/listings/' + property);
+  assert.equal(cleared.status, 200);
+  assert.ok(!cleared.text.includes(googleMapUrl));
 });
 test('significant edits stay private and consent withdrawals immediately restrict the old version',async()=>{
   const r=await post(owner,'/owner/'+id,{...details,name:'TEST ONLY — PENDING SECRET NAME',intent:'draft'});assert.equal(r.status,302);

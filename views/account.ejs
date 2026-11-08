@@ -1,1 +1,78 @@
-<%- include('partials/header') %><section class="prose"><span class="eyebrow">MY ACCOUNT</span><h1>Your PG Dekho account</h1><p><a class="quiet" href="/account/security">Email verification and account security →</a><% if(user.role==='user'){ %> · <a href="/reports">My listing reports →</a><% } %></p><div class="panel"><h2><%= user.name %></h2><p><%= user.email %></p><p>Account type: <strong><%= user.role==='user'?'Student / seeker':user.role==='owner'?'PG owner':'Administrator' %></strong></p><% if(q.changed==='1'){ %><div class="notice" role="status">Your account is now a student / seeker account. Owner tools are disabled.</div><% } if(user.role==='user'){ %><p>Your account stays a student account when you browse or contact PG owners. It cannot create properties or access owner/admin dashboards.</p><a class="button" href="/listings">Find a PG →</a><% } if(user.role==='owner'&&!hasListings){ %><h3>Did you intend to register as a student?</h3><p>If this account became an owner through the earlier onboarding flow, you can explicitly correct it here. This option is available only while you have no PG listings.</p><form method="post" action="/account/student"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="check"><input type="checkbox" name="confirm" value="student" required>I want to use this account only as a student / seeker.</label><button class="outline">Use a student account</button></form><% } %></div></section><%- include('partials/footer') %>
+<%- include('partials/header') %>
+<%
+const roleLabel = user.role === 'user' ? 'Student / seeker' : user.role === 'owner' ? 'PG owner' : 'Administrator';
+const shortcuts = user.role === 'user'
+  ? [
+      ['heart', '/favorites', 'Saved PGs', 'Pick up where you left off.'],
+      ['compare', '/compare', 'Compare PGs', 'Review your shortlist side by side.'],
+      ['message', '/inquiries', 'My inquiries', 'Track questions and visit requests.'],
+      ['flag', '/reports', 'My reports', 'Check the status of reports you submitted.'],
+    ]
+  : user.role === 'owner'
+    ? [
+        ['building', '/owner', 'My properties', 'View listings and approval status.'],
+        ['message', '/owner?tab=inquiries', 'Inquiry inbox', 'Respond to questions about your PGs.'],
+      ]
+    : [
+        ['file', '/admin', 'Review queue', 'Review submitted properties.'],
+        ['users', '/admin/owners', 'Owner management', 'View and manage owner accounts.'],
+      ];
+%>
+<section class="account-page" aria-labelledby="account-title">
+  <header class="account-heading">
+    <h1 id="account-title">My profile</h1>
+  </header>
+
+  <% if(q.changed === '1'){ %>
+    <p class="notice" role="status">Your account is now a student / seeker account.</p>
+  <% } %>
+
+  <div class="account-identity">
+    <div class="account-avatar" aria-hidden="true"><%= user.name?.trim().charAt(0).toLocaleUpperCase() || 'P' %></div>
+    <div class="account-name">
+      <h2><%= user.name %></h2>
+      <span class="account-tag"><%= roleLabel %></span>
+    </div>
+    <% if(user.role === 'user'){ %>
+      <a class="outline account-explore" href="/listings">Explore PGs</a>
+    <% } %>
+  </div>
+
+  <div class="account-grid">
+    <section class="account-panel" aria-labelledby="profile-details">
+      <h2 id="profile-details">Personal details</h2>
+      <dl class="account-details">
+        <div><dt>Full name</dt><dd><%= user.name %></dd></div>
+        <div><dt>Email address</dt><dd><%= user.email %></dd></div>
+        <div><dt>Account type</dt><dd><%= roleLabel %></dd></div>
+      </dl>
+      <a class="quiet" href="/account/security"><%= user.role === 'user' ? 'Manage email verification' : 'Account security' %> →</a>
+    </section>
+
+    <section class="account-panel" aria-labelledby="profile-shortcuts">
+      <h2 id="profile-shortcuts">Quick links</h2>
+      <ul class="account-links">
+        <% for(const [icon, href, label, description] of shortcuts){ %>
+          <li><a href="<%= href %>">
+            <span class="account-link-icon"><%- include('partials/icon', { name: icon }) %></span>
+            <span><strong><%= label %></strong><small><%= description %></small></span>
+            <%- include('partials/icon', { name: 'chevron' }) %>
+          </a></li>
+        <% } %>
+      </ul>
+    </section>
+  </div>
+
+  <% if(user.role === 'owner' && !hasListings){ %>
+    <section class="account-panel account-role-panel" aria-labelledby="account-role-change">
+      <h2 id="account-role-change">Switch to a student account</h2>
+      <p>This option is available while your owner account has no PG listings.</p>
+      <form method="post" action="/account/student">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="check"><input type="checkbox" name="confirm" value="student" required>I want to use this account only as a student / seeker.</label>
+        <button class="outline" type="submit">Use a student account</button>
+      </form>
+    </section>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

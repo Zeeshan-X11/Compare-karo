@@ -69,8 +69,10 @@ test('directory is public without approval, uses real source references and has 
   assert.match(r.text, /not a complete list or a live vacancy feed/);
   assert.match(r.text, /Public directory · Unverified/);
   assert.doesNotMatch(r.text, /Nearby · Dibbur/);
-  assert.match(r.text, /www\.openstreetmap\.org\/export\/embed/);
-  assert.match(r.headers['content-security-policy'], /frame-src https:\/\/www\.openstreetmap\.org/);
+  assert.doesNotMatch(r.text, /openstreetmap|<iframe/i);
+  assert.match(r.headers['content-security-policy'], /frame-src 'none'/);
+  assert.match(r.text, /href="https:\/\/goo\.gl\/maps\/cGy7GezsqaEMYiC87"/);
+  assert.match(r.text, /https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=.*Manju/);
   assert.doesNotMatch(r.text, /name="monthlyRent"|action="\/inquiries|action="\/favorites/);
   assert.doesNotMatch(r.text, /marker=|mlat=/);
 });
@@ -90,27 +92,60 @@ test('directory category and pagination are enforced and advanced owner filters 
   assert.doesNotMatch((await guest.get('/listings?area=Yelahanka')).text, /directory-preview-title/);
   assert.equal((await guest.get('/directory/rajanukunte?category%5B%24ne%5D=Men')).status, 200);
 });
+test('students can save and remove directory PGs without exposing hidden entries', async () => {
+  const entry = await Entry.findOne({ slug: 'mars-pg-men' });
+  const action = '/favorites/directory/' + entry.id;
+  assert.match((await guest.get('/directory/rajanukunte')).text, /Log in to save/);
+  assert.match((await student.get('/directory/rajanukunte?q=Mars')).text, /Save Mars PG for Men/);
+  assert.equal((await student.post(action).type('form').send({ action: 'add' })).status, 403);
+  const added = await post(student, action, { action: 'add', returnTo: '/directory/rajanukunte' });
+  assert.equal(added.headers.location, '/directory/rajanukunte');
+  const saved = await student.post(action).set('Accept', 'application/json').type('form').send({
+    _csrf: await token(student), action: 'add',
+  });
+  assert.deepEqual(saved.body, { saved: true });
+  const savedPage = await student.get('/favorites');
+  assert.match(savedPage.text, /Saved directory PGs/);
+  assert.equal((savedPage.text.match(/Remove Mars PG for Men from saved PGs/g) || []).length, 1);
+  assert.doesNotMatch((await owner.get('/favorites')).text, /Mars PG for Men/);
+  await Entry.updateOne({ _id: entry._id }, { $set: { hidden: true } });
+  try {
+    const hiddenPage = await student.get('/favorites');
+    assert.doesNotMatch(hiddenPage.text, /Mars PG for Men/);
+    assert.match(hiddenPage.text, /Unavailable directory PG/);
+    assert.equal((await post(student, action, { action: 'add' })).status, 404);
+    const removed = await student.post(action).set('Accept', 'application/json').type('form').send({
+      _csrf: await token(student), action: 'remove',
+    });
+    assert.deepEqual(removed.body, { saved: false });
+  } finally {
+    await Entry.updateOne({ _id: entry._id }, { $set: { hidden: false } });
+  }
+  assert.doesNotMatch((await student.get('/favorites')).text, /Unavailable directory PG|Mars PG for Men/);
+});
 test('map locations require both review and consent and invalid coordinates never become pins', () => {
   const listing = { locality: 'Rajanukunte', coordinates: { latitude: 13.17, longitude: 77.56, verified: true, publicationAuthorized: true } };
   assert.equal(maps(listing).exact, true);
-  assert.match(maps(listing).embedUrl, /marker=13.17%2C77.56/);
+  assert.equal(new URL(maps(listing).url).searchParams.get('query'), '13.17,77.56');
   listing.coordinates.publicationAuthorized = false;
   assert.equal(maps(listing).exact, false);
-  assert.doesNotMatch(maps(listing).embedUrl, /marker=|13.17%2C77.56/);
   assert.doesNotMatch(maps(listing).url, /13.17/);
+  assert.equal(new URL(maps(listing).url).searchParams.get('query'), 'Rajanukunte, Bengaluru, Karnataka');
   listing.coordinates.publicationAuthorized = true;
   listing.coordinates.verified = false;
   assert.equal(maps(listing).exact, false);
   listing.coordinates.verified = true;
   listing.coordinates.latitude = 91;
   assert.equal(maps(listing).exact, false);
-  assert.equal(maps({ locality: 'Unmapped' }).embedUrl, null);
 });
 test('directory references reject executable links and misleading source hosts', () => {
   for (const url of ['javascript:alert(1)', 'https://www.magicbricks.com.evil.invalid/', 'https://user@www.magicbricks.com/', 'http://www.magicbricks.com/']) {
     assert.ok(new Entry({ ...catalog[0], sourceUrl: url }).validateSync());
   }
   for (const row of catalog) assert.equal(new Entry(row).validateSync(), undefined);
+  for (const url of ['javascript:alert(1)', 'https://www.google.com.evil.invalid/maps/search/?api=1&query=test', 'https://goo.gl/unrelated']) {
+    assert.ok(new Entry({ ...catalog[0], sourceMapUrl: url }).validateSync());
+  }
 });
 test('only admins can moderate directory entries and CSRF is required', async () => {
   const url = '/admin/directory/albury-house/visibility';

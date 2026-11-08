@@ -288,21 +288,23 @@ section {
   color: #5c665f;
 }
 .house {
+  --house-side: 18px;
   position: absolute;
   bottom: 70px;
   left: 24%;
   width: 190px;
   height: 230px;
   background: #f8f7f1;
-  border-right: 18px solid #d4d4c8;
+  border-right: var(--house-side) solid #d4d4c8;
   box-shadow: 20px 25px 0 #c5c9bb70;
   z-index: 2;
 }
 .roof {
   position: absolute;
-  top: -58px;
+  bottom: 100%;
   left: -10px;
-  width: 208px;
+  /* Extend over the side wall so both eaves project equally. */
+  right: calc(-10px - var(--house-side));
   height: 70px;
   background: #527264;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);

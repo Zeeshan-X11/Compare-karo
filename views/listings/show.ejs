@@ -142,7 +142,6 @@
           <div class="location-copy"><strong><%= listing.locality %>, Bengaluru</strong><p><%= listing.address %></p><a class="outline small" href="<%= map.url %>" target="_blank" rel="noopener noreferrer"><%= map.exact?'View reviewed property location in Google Maps ↗':'Explore approximate locality in Google Maps ↗' %></a></div>
         </div>
         <% if(!map.exact){ %><p class="muted property-section-note">Locality only — the exact property pin has not been reviewed and authorized for publication. Ask the owner for directions.</p><% } %>
-        <%- include('../partials/map',{map}) %>
       </section>
 
       <details class="panel property-report">

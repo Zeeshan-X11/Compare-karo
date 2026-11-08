@@ -1,7 +1,0 @@
-<% if(map.embedUrl){ %>
-  <div class="free-map">
-    <iframe src="<%= map.embedUrl %>" title="<%= map.label %> — OpenStreetMap" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-popups" width="800" height="320"></iframe>
-    <div class="map-caption"><span><%= map.label %></span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></div>
-    <a class="quiet" href="<%= map.osmUrl %>" target="_blank" rel="noopener noreferrer">Open larger map ↗</a>
-  </div>
-<% } %>
