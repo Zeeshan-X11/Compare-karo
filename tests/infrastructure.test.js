@@ -13,3 +13,13 @@ test('production configuration never accepts insecure MongoDB transport',()=>{
   const env={NODE_ENV:'production',MONGO_URL:'mongodb+srv://example.invalid/nestly?tlsInsecure=true',SESSION_SECRET:'x'.repeat(48),APP_ORIGIN:'https://example.invalid',MFA_ENCRYPTION_KEY:Buffer.alloc(32,9).toString('base64'),RESEND_API_KEY:'test-only',EMAIL_FROM:'test@example.invalid',EMAIL_WEBHOOK_SECRET:'test-only',UPLOAD_DIR:path.resolve('work/photos'),AUTHORIZATION_DIR:path.resolve('work/documents'),STORAGE_DURABLE:'true'};
   assert.throws(()=>require('../lib/config').validateEnvironment(env),/transport security/);
 });
+test('production demo starts with core settings and requires durable storage for uploads',()=>{
+  const {validateEnvironment,durableUploads}=require('../lib/config');
+  const env={NODE_ENV:'production',MONGO_URL:'mongodb+srv://example.invalid/nestly',SESSION_SECRET:'x'.repeat(48)};
+  assert.doesNotThrow(()=>validateEnvironment(env));
+  assert.equal(durableUploads(env),false);
+  assert.equal(durableUploads({...env,STORAGE_DURABLE:'true',UPLOAD_DIR:'photos'}),false);
+  assert.equal(durableUploads({...env,STORAGE_DURABLE:'true',UPLOAD_DIR:'photos',AUTHORIZATION_DIR:'documents'}),true);
+  assert.throws(()=>validateEnvironment({...env,MFA_ENCRYPTION_KEY:'invalid'}),/32 random bytes/);
+  assert.throws(()=>validateEnvironment({...env,APP_ORIGIN:'http://example.invalid'}),/HTTPS origin/);
+});

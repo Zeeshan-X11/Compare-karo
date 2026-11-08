@@ -25,6 +25,7 @@ function registerSecurity({app,auth,wrap,emailTransport}){
   const limit=limiter('security',{account:6,ip:240,windowMs:900000});
   const regenerate=req=>new Promise((resolve,reject)=>req.session.regenerate(e=>e?reject(e):resolve()));
   async function sendToken(user,purpose){
+    if(!emailConfigured(emailTransport))throw problem(503,'Email delivery is unavailable.');
     const token=crypto.randomBytes(32).toString('hex'),tokenHash=mfa.hash(token);
     await Token.deleteMany({userId:user._id,purpose});
     await Token.create({_id:tokenHash,userId:user._id,purpose,expiresAt:new Date(Date.now()+(purpose==='reset'?30:60)*60000)});

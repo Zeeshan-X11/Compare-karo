@@ -254,11 +254,13 @@ test('health endpoints are session-free and private storage prevents path traver
   const l=await Listing.findOne({'images.thumbnail':{$exists:true}});assert.ok(l.images[0].thumbnail);assert.ok((await fs.stat(storage.path('photo',l.images[0].thumbnail))).size>0);
 });
 test('production enforces verified owners, administrator MFA gates and secure session cookies',async()=>{
-  const names=['NODE_ENV','MONGO_URL','APP_ORIGIN','RESEND_API_KEY','EMAIL_FROM','EMAIL_WEBHOOK_SECRET','CLAMD_HOST','STORAGE_DURABLE'],saved=Object.fromEntries(names.map(n=>[n,process.env[n]]));
+  const core={NODE_ENV:'production',MONGO_URL:'mongodb+srv://example.invalid/nestly'};
+  const names=[...Object.keys(core),'APP_ORIGIN','RESEND_API_KEY','EMAIL_FROM','EMAIL_WEBHOOK_SECRET','MFA_ENCRYPTION_KEY','STORAGE_DURABLE'],saved=Object.fromEntries(names.map(n=>[n,process.env[n]]));
   let production;
   try{
-    Object.assign(process.env,{NODE_ENV:'production',MONGO_URL:'mongodb+srv://example.invalid/nestly',APP_ORIGIN:'https://example.invalid',RESEND_API_KEY:'TEST-ONLY-NOT-A-PROVIDER-KEY',EMAIL_FROM:'test@example.invalid',EMAIL_WEBHOOK_SECRET:'whsec_'+Buffer.alloc(32,9).toString('base64'),CLAMD_HOST:'test-scanner.invalid',STORAGE_DURABLE:'true'});
-    production=createApp({memorySession:true,emailTransport:async()=>({id:crypto.randomUUID()})});
+    for(const name of names)delete process.env[name];
+    Object.assign(process.env,core);
+    production=createApp({memorySession:true});
   }finally{for(const name of names)if(saved[name]===undefined)delete process.env[name];else process.env[name]=saved[name];}
   const plainAdmin=await User.create({name:'PRODUCTION GATE TEST ONLY',email:'prod-admin@isolated.test',role:'admin',emailVerifiedAt:new Date(),passwordHash:await require('bcryptjs').hash(password,12)});
   async function login(email){
@@ -270,4 +272,14 @@ test('production enforces verified owners, administrator MFA gates and secure se
   const listing=await Listing.findOne({'authorizationDocuments.0':{$exists:true}});assert.equal((await request(production).get('/listings/'+listing._id+'/authorization/'+listing.authorizationDocuments[0]._id).set('X-Forwarded-Proto','https').set('Cookie',adminCookie)).headers.location,'/account/security');
   const hidden=await Listing.findOne({publicHidden:true,'images.0':{$exists:true}});assert.equal((await request(production).get('/media/'+hidden.images[0].filename).set('X-Forwarded-Proto','https').set('Cookie',adminCookie)).status,404,'password-only admin sessions have no private-photo exemption');
   const ownerCookie=await login('owner@isolated.test');assert.equal((await request(production).get('/owner').set('X-Forwarded-Proto','https').set('Cookie',ownerCookie)).headers.location,'/account/security');
+  const ownerRequest=method=>url=>request(production)[method](url).set('X-Forwarded-Proto','https').set('Cookie',ownerCookie);
+  const securityPage=await ownerRequest('get')('/account/security');
+  const csrf=securityPage.text.match(/name="_csrf" value="([^"]+)"/)[1];
+  const ownerUser=await User.findOne({email:'owner@isolated.test'});
+  const before=await Token.countDocuments({userId:ownerUser._id});
+  assert.equal((await ownerRequest('post')('/account/verify/send').type('form').send({_csrf:csrf})).status,503);
+  assert.equal(await Token.countDocuments({userId:ownerUser._id}),before);
+  await User.updateOne({_id:ownerUser._id},{$set:{emailVerifiedAt:new Date()}});
+  assert.equal((await ownerRequest('post')('/owner').type('form').send({})).status,403);
+  assert.equal((await ownerRequest('post')('/owner').type('form').send({_csrf:csrf})).status,503);
 });

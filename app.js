@@ -623,7 +623,9 @@ function createApp(options = {}) {
       });
     }
   });
-  const uploadGate=uploadGuard({globalLimit:options.uploadLimit||2});
+  const uploadGate=production&&!require('./lib/config').durableUploads()
+    ? (req,res,next)=>next(problem(503,'Property uploads require persistent storage and are unavailable on this deployment.'))
+    : uploadGuard({globalLimit:options.uploadLimit||2});
   app.post(
     "/owner",
     auth,
