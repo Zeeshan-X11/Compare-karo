@@ -59,7 +59,7 @@ before(
   async () => {
     mongo = await MongoMemoryServer.create();
     await mongoose.connect(mongo.getUri());
-    app = createApp({ memorySession: true, actionLimit: 200, documentScanner:async()=>({status:"clean",engine:"TEST-ONLY",scannedAt:new Date()}) });
+    app = createApp({ memorySession: true, actionLimit: 200 });
     server = app.listen(0, "127.0.0.1");
     await new Promise((resolve) => server.once("listening", resolve));
     owner = request.agent(server);

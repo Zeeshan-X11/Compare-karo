@@ -23,7 +23,7 @@ On PowerShell, use `Copy-Item .env.example .env`. The default address is http://
 - `routes/operations.js`: consent revocation, withdrawal, availability-only updates, report tracking, scans and audit UI.
 - `routes/security.js`: verified email links, password recovery, signed delivery webhooks and admin MFA.
 - `models/`: users, listings with approved snapshots, inquiries, audit events, persistent rate buckets, account tokens and delivery states.
-- `lib/`: publication rules, validation, storage, uploads, scanner/PDF safety, email, MFA, configuration and health checks.
+- `lib/`: publication rules, validation, storage, uploads, PDF validation, email, MFA, configuration and health checks.
 - `views/` and `public/`: existing EJS UI, palette, branding, mobile navigation and gallery; new controls reuse existing panels/buttons.
 - `scripts/`: builds, explicit operator index/admin/review commands and isolated load/restore tooling.
 
@@ -35,7 +35,7 @@ New listings require complete details, sharing-wise rent, authorized exterior ph
 
 Unversioned legacy listings require fresh review before public reads. Stored data is retained; no silent approval or destructive migration runs at startup. Use `npm run listings:audit` only against an explicitly authorized database. Read the migration section before switching a real site to this release.
 
-Photos are decoded with pixel limits, re-encoded as WebP and given thumbnails. Limit: 4 MiB/file, 24 MiB/request, 12 photos and 3 documents/property, per-account/day/action quotas and upload concurrency guards. Separate persistent volumes hold photos and private authorization documents. Quarantined documents cannot be opened or approved. Parsing/scanning never proves government authorization or document authenticity.
+Photos are decoded with pixel limits, re-encoded as WebP and given thumbnails. Limit: 4 MiB/file, 24 MiB/request, 12 photos and 3 documents/property, per-account/day/action quotas and upload concurrency guards. Separate persistent volumes hold photos and private authorization documents. Previously flagged documents require replacement. File validation and private human review still apply.
 
 ## Security and external services
 
@@ -43,7 +43,7 @@ Sessions are HttpOnly/SameSite with Secure cookies in production and a bounded M
 
 Resend must be configured before verification/recovery emails can be sent. The app distinguishes provider acceptance, delivery state and link-confirmed address ownership. With no provider it reports the feature unavailable. Phone numbers are plausibility-checked, not ownership-verified. WhatsApp and Google Maps use ordinary external links. Google Maps links show reviewed, consented property coordinates when available. No SMS provider or booking/payment processing is configured.
 
-The chosen deployment is Linux Docker with Caddy, ClamAV, durable volumes and MongoDB Atlas. Vercel Functions are rejected for this filesystem deployment; no serverless/local-disk durability claim is made. Hosting/email/DNS/backup accounts, real scanner engine checks, Atlas staging and production cutover require operator setup. [Deployment, backup and recovery instructions](docs/PRODUCTION.md) contain all environment variable names and exact commands.
+The chosen deployment is Linux Docker with Caddy, durable volumes and MongoDB Atlas. Vercel Functions are rejected for this filesystem deployment; no serverless/local-disk durability claim is made. Hosting/email/DNS/backup accounts, Atlas staging and production cutover require operator setup. [Deployment, backup and recovery instructions](docs/PRODUCTION.md) contain all environment variable names and exact commands.
 
 ## Verify safely
 

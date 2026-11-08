@@ -3,6 +3,8 @@
   <div class="access-shell">
     <div class="access-content">
       <h1 id="access-title"><%= signup ? 'Create an account' : 'Log in' %></h1>
+      <% const entered = locals.signupValues || {}; %>
+      <% if (locals.signupMessage) { %><p class="notice" role="alert"><%= signupMessage %></p><% } %>
       <form method="post" action="/<%= signup ? 'signup' : 'login' %>" class="access-form">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <% if(signup){ %>
@@ -10,22 +12,21 @@
             <label for="access-role">I’m here to</label>
             <select id="access-role" name="role">
               <option value="user">Find a PG</option>
-              <option value="owner" <%= q.role === 'owner' ? 'selected' : '' %>>List and manage my PG</option>
+              <option value="owner" <%= (entered.role || q.role) === 'owner' ? 'selected' : '' %>>List and manage my PG</option>
             </select>
           </div>
           <div class="access-field">
             <label for="access-name">Full name</label>
-            <input id="access-name" name="name" required maxlength="80" autocomplete="name" placeholder="Enter your full name">
+            <input id="access-name" name="name" value="<%= entered.name || '' %>" required maxlength="80" autocomplete="name" placeholder="Enter your full name">
           </div>
         <% } %>
         <div class="access-field">
           <label for="access-email">Email address</label>
-          <input id="access-email" type="email" name="email" required maxlength="254" autocomplete="<%= signup ? 'email' : 'username' %>" placeholder="you@example.com">
+          <input id="access-email" type="email" name="email" value="<%= entered.email || '' %>" required maxlength="254" autocomplete="<%= signup ? 'email' : 'username' %>" placeholder="you@example.com">
         </div>
         <div class="access-field">
           <div class="access-password-label">
             <label for="access-password">Password</label>
-            <% if(!signup){ %><a href="/forgot-password">Forgot password?</a><% } %>
           </div>
           <input id="access-password" type="password" name="password" required minlength="12" maxlength="128" autocomplete="<%= signup ? 'new-password' : 'current-password' %>" placeholder="<%= signup ? 'Create a password' : 'Enter your password' %>" <% if(signup){ %>aria-describedby="access-password-hint"<% } %>>
           <% if(signup){ %><small id="access-password-hint">Use at least 12 characters.</small><% } %>

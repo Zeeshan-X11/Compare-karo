@@ -47,7 +47,7 @@ function createApp(options = {}) {
   require('./lib/config').validateRuntime();
   const app = express();
   const production = process.env.NODE_ENV === "production";
-  const renderReview = require('./lib/admin-review').reviewRenderer({production,documentScanner:options.documentScanner});
+  const renderReview = require('./lib/admin-review').reviewRenderer({production});
   const reviewAction = fn => wrap(async (req,res,next) => {
     try { return await fn(req,res,next); }
     catch (error) {
@@ -334,24 +334,33 @@ function createApp(options = {}) {
       const name = scalar(req.body.name),
         email = scalar(req.body.email).toLowerCase(),
         password = typeof req.body.password==='string'?req.body.password:'';
-      if (
-        !name ||
-        name.length > 80 ||
-        !/^\S+@\S+\.\S+$/.test(email) ||
-        email.length > 254 ||
-        password.length < 12 ||
-        !password.trim() ||
-        Buffer.byteLength(password, "utf8") > 72
-      )
-        throw problem(400,
-          "Enter your name, valid email, and a password of at least 12 characters and no more than 72 UTF-8 bytes.",
-        );
-      const user = await User.create({
-        name,
-        email,
-        passwordHash: await bcrypt.hash(password, 12),
-        role: req.body.role === "owner" ? "owner" : "user",
+      const accountRole = req.body.role === "owner" ? "owner" : "user";
+      const signupError = (status, message) => res.status(status).render("auth", {
+        signup: true,
+        signupMessage: message,
+        signupValues: { name, email, role: accountRole },
       });
+      if (!name || name.length > 80)
+        return signupError(400, "Enter a name of 1 to 80 characters.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+        return signupError(400, "Enter a valid email address.");
+      if (password.length < 12 || !password.trim())
+        return signupError(400, "Choose a password with at least 12 characters.");
+      if (Buffer.byteLength(password, "utf8") > 72)
+        return signupError(400, "Your password is too long. Use fewer characters, especially emoji or other multibyte characters.");
+      let user;
+      try {
+        user = await User.create({
+          name,
+          email,
+          passwordHash: await bcrypt.hash(password, 12),
+          role: accountRole,
+        });
+      } catch (error) {
+        if (error.code === 11000)
+          return signupError(409, "An account already uses this email. Log in or use a different email address.");
+        throw error;
+      }
       const returnTo = req.session.returnTo;
       await new Promise((resolve, reject) =>
         req.session.regenerate((e) => (e ? reject(e) : resolve())),
@@ -542,7 +551,6 @@ function createApp(options = {}) {
         req.body,
         req.user._id,
         authorizationDir,
-        options.documentScanner,
       );
       listing.authorizationDocuments.push(...preparedDocuments);
       resetAuthorization(listing);
@@ -698,7 +706,7 @@ function createApp(options = {}) {
         listing.approvedAuthorizationDocuments?.id(req.params.documentId);
       if (!document || !/^([a-f0-9]{48})\.(pdf|webp)$/.test(document.filename))
         return res.sendStatus(404);
-      if(document.scanStatus!=='clean')throw problem(423,'This document is quarantined pending a successful security scan. It has not been authenticated.');
+      if(document.scanStatus==='infected')throw problem(423,'This document was previously flagged as unsafe. Upload a replacement.');
       await audit(req,'document.access','Listing',listing._id,{documentId:String(document._id),reviewState:document.status});
       res.set({
         "Cache-Control": "private, no-store",
@@ -828,7 +836,7 @@ function createApp(options = {}) {
     }),
   );
   registerPortalRoutes({ app, auth, role, wrap, actionLimit:contactLimit, owned });
-  require("./routes/operations").registerOperations({app,auth,role,wrap,reviewAction,owned,authorizationDir,documentScanner:options.documentScanner});
+  require("./routes/operations").registerOperations({app,auth,role,wrap,owned});
   app.get(
     "/admin",
     auth,
@@ -944,7 +952,7 @@ function createApp(options = {}) {
           if (!img.rightsDeclared) throw problem(400,"Missing image rights.");
           img.status = "approved";
         }
-        if(l.authorizationDocuments.some(d=>d.scanStatus!=='clean'))throw problem(400,'Every authorization document must pass security scanning before approval. Parsing does not establish authenticity.');
+        if(l.authorizationDocuments.some(d=>d.scanStatus==='infected'))throw problem(400,'Replace authorization documents previously flagged as unsafe.');
         for (const document of l.authorizationDocuments) {
           document.status = "accepted";
           document.reviewedBy = req.user._id;
@@ -965,7 +973,7 @@ function createApp(options = {}) {
         if (issues.length) throw problem(400,"Cannot publish: " + issues.join(", "));
         if (
           !l.authorizationDocuments.some(
-            (d) => d.scanStatus === "clean" && d.status === "accepted" && d.reviewedBy && d.reviewedAt,
+            (d) => d.scanStatus !== "infected" && d.status === "accepted" && d.reviewedBy && d.reviewedAt,
           )
         )
           throw problem(400,

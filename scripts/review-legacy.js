@@ -9,7 +9,7 @@ async function reviewLegacy(){
     const candidate=listing.publicSnapshot?{...listing.toObject(),...listing.publicSnapshot}:listing;
     const issues=submissionIssues(candidate);
     if((candidate.publicationPolicyVersion||0)!==POLICY_VERSION)issues.push('Current policy requires explicit admin re-approval');
-    if(!(listing.approvedAuthorizationDocuments?.length?listing.approvedAuthorizationDocuments:listing.authorizationDocuments).every(d=>d.scanStatus==='clean'&&d.status==='accepted'))issues.push('Authorization evidence needs scanning and human review');
+    if(!(listing.approvedAuthorizationDocuments?.length?listing.approvedAuthorizationDocuments:listing.authorizationDocuments).every(d=>d.scanStatus!=='infected'&&d.status==='accepted'))issues.push('Authorization evidence needs usable documents and human review');
     findings.push({id:String(listing._id),state:listing.listingStatus,publiclyEligible:issues.length===0,issues});
   }
   return {readOnly:true,policyVersion:POLICY_VERSION,count:findings.length,findings};

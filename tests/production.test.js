@@ -22,7 +22,7 @@ async function approve(property=id){const r=await post(admin,'/admin/'+property,
 before(async()=>{
   mongo=await MongoMemoryServer.create();await mongoose.connect(mongo.getUri('nestly_production_regressions'));
   await Promise.all([require('../models/rate-bucket').init(),Token.init(),User.init()]);
-  app=createApp({memorySession:true,documentScanner:async()=>({status:'clean',engine:'TEST-PROTOCOL-ONLY',scannedAt:new Date()}),emailTransport:async message=>{messages.push(message);return {id:crypto.randomUUID()};}});
+  app=createApp({memorySession:true,emailTransport:async message=>{messages.push(message);return {id:crypto.randomUUID()};}});
   server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
   owner=request.agent(server);admin=request.agent(server);student=request.agent(server);
   for(const [agent,name,role]of [[owner,'owner','owner'],[admin,'admin','user'],[student,'student','user']])assert.equal((await post(agent,'/signup',{name,email:name+'@isolated.test',password,role})).status,302,name);
@@ -33,7 +33,7 @@ before(async()=>{
 },{timeout:120000});
 after(async()=>{if(server)await new Promise(r=>server.close(r));await mongoose.disconnect();if(mongo)await mongo.stop();});
 test('new publication requires complete review and keeps private evidence out of snapshots',async()=>{
-  const l=await Listing.findById(id);assert.equal(l.publicSnapshot.publicationPolicyVersion,2);assert.equal(l.authorizationDocuments[0].scanStatus,'clean');
+  const l=await Listing.findById(id);assert.equal(l.publicSnapshot.publicationPolicyVersion,2);assert.notEqual(l.authorizationDocuments[0].scanStatus,'clean');
   assert.equal((await request(server).get('/listings/'+id)).status,200);assert.ok(!('authorizationDocuments' in l.publicSnapshot));assert.ok(!('approvedAuthorizationDocuments' in l.publicSnapshot));
 });
 test('owners can paste a Google Maps link and only the reviewed, consented link becomes public', async () => {
@@ -148,8 +148,8 @@ test('private pages have no-store and unexpected errors do not expose database m
   const original=User.findById;User.findById=()=>({select:()=>Promise.reject(Error('SECRET database URI and internal stack must not be exposed'))});
   try{const r=await student.get('/account');assert.equal(r.status,500);assert.doesNotMatch(r.text,/SECRET database|internal stack/);}finally{User.findById=original;}
 });
-test('quarantined documents cannot be downloaded or approved, and can be rescanned explicitly',async()=>{
-  const qid=await submitNew(),l=await Listing.findById(qid);l.authorizationDocuments[0].scanStatus='quarantined';await l.save();const doc=l.authorizationDocuments[0];
+test('previously flagged documents stay blocked while unscanned documents can receive human review',async()=>{
+  const qid=await submitNew(),l=await Listing.findById(qid);l.authorizationDocuments[0].scanStatus='infected';await l.save();const doc=l.authorizationDocuments[0];
   const review=await admin.get('/admin/'+qid);
   assert.equal(review.status,200);assert.match(review.text,/Approval needs attention/);
   assert.match(review.text,/value="approve" disabled/);
@@ -158,8 +158,7 @@ test('quarantined documents cannot be downloaded or approved, and can be rescann
   const blocked=await post(admin,'/admin/'+qid,{action:'approve',reviewed:'yes',authorizationReviewed:'yes',notes:'Keep this admin review note'});
   assert.equal(blocked.status,400);assert.match(blocked.text,/The action could not be completed/);assert.match(blocked.text,/Keep this admin review note/);
   assert.equal((await Listing.findById(qid)).images[0].status,'pending');
-  assert.equal((await post(admin,'/admin/'+qid+'/authorization/'+doc._id+'/scan')).status,302);
-  assert.equal((await Listing.findById(qid)).authorizationDocuments[0].scanStatus,'clean');
+  await Listing.updateOne({_id:qid},{$set:{'authorizationDocuments.0.scanStatus':'quarantined'}});
   const ready=await admin.get('/admin/'+qid);assert.match(ready.text,/Ready for admin review/);assert.doesNotMatch(ready.text,/value="approve" disabled/);
   const missingConfirmation=await post(admin,'/admin/'+qid,{action:'approve',notes:'Need explicit human document review'});
   assert.equal(missingConfirmation.status,400);assert.match(missingConfirmation.text,/Confirm property data/);
@@ -170,24 +169,6 @@ test('quarantined documents cannot be downloaded or approved, and can be rescann
   assert.equal((await request(server).get('/listings/'+qid)).status,200);
 });
 
-test('unconfigured rescan reports the real blocker on the review page and never claims success',async()=>{
-  const qid=await submitNew(),l=await Listing.findById(qid);l.authorizationDocuments[0].scanStatus='quarantined';l.authorizationDocuments[0].scanEngine='not-configured';await l.save();
-  const noScannerServer=createApp({memorySession:true}).listen(0,'127.0.0.1');
-  await new Promise(resolve=>noScannerServer.once('listening',resolve));
-  try{
-    const reviewer=request.agent(noScannerServer);
-    assert.equal((await post(reviewer,'/login',{email:'admin@isolated.test',password})).status,302);
-    const page=await reviewer.get('/admin/'+qid);
-    assert.match(page.text,/Document scanning is not configured on this server/);
-    assert.match(page.text,/owner does not need to upload them again/);
-    const scanned=await post(reviewer,'/admin/'+qid+'/authorization/'+l.authorizationDocuments[0]._id+'/scan');
-    assert.equal(scanned.status,503);assert.match(scanned.text,/The document remains quarantined/);assert.match(scanned.text,/PG operation authorization — private review/);
-    assert.match(scanned.headers['cache-control'],/no-store/);
-    const saved=await Listing.findById(qid);
-    assert.equal(saved.listingStatus,'submitted');assert.equal(saved.authorizationDocuments[0].scanStatus,'quarantined');assert.equal(saved.authorizationDocuments[0].status,'pending');
-    assert.equal(await publication.getPublic(qid),null);
-  }finally{await new Promise(resolve=>noScannerServer.close(resolve));}
-});
 test('checking pending owner details does not certify the previous approved version; orphaned owners are hidden',async()=>{
   const pid=await submitNew();await approve(pid);
   const before=await publication.getPublic(pid);
@@ -197,12 +178,11 @@ test('checking pending owner details does not certify the previous approved vers
   const l=await Listing.findById(pid),originalOwner=l.ownerId;l.ownerId=new mongoose.Types.ObjectId();await l.save();assert.equal(await publication.getPublic(pid),null);assert.equal((await request(server).get('/media/'+l.publicSnapshot.images[0].filename)).status,404);
   l.ownerId=originalOwner;await l.save();
 });
-test('active PDF content is rejected; unconfigured scanners quarantine, never certify',async()=>{
+test('active PDF content is rejected',async()=>{
   const {PDFDocument,PDFName,PDFString}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage();pdf.catalog.set(PDFName.of('OpenAction'),pdf.context.obj({S:'JavaScript',JS:PDFString.of('app.alert(1)')}));
   await assert.rejects(()=>require('../lib/authorization').prepareAuthorization([{mimetype:'application/pdf',buffer:Buffer.from([])}],{authorizationDeclaration:'yes',authorizationType:'Trade licence'},ownerId,process.env.AUTHORIZATION_DIR),/valid PDF/);
   const bytes=Buffer.from(await pdf.save());
   await assert.rejects(()=>require('../lib/authorization').prepareAuthorization([{mimetype:'application/pdf',buffer:bytes}],{authorizationDeclaration:'yes',authorizationType:'Trade licence'},ownerId,process.env.AUTHORIZATION_DIR),/Active PDF/);
-  assert.equal((await require('../lib/scanner').scanDocument(png)).status,'quarantined');
 });
 test('verified email delivery tokens are hashed, expire and can be consumed only once',async()=>{
   assert.equal((await post(student,'/account/verify/send')).status,200);

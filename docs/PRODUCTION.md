@@ -1,28 +1,27 @@
 # PG Dekho production deployment and operations
 
-This release keeps Express, EJS and MongoDB. It targets one Linux Docker host with durable filesystem volumes, MongoDB Atlas, Resend email, a private ClamAV sidecar and Caddy HTTPS. It has not been deployed to a paid host from this workspace. Provider accounts, DNS, credentials and real-data migration require the operator's setup and approval.
+This release keeps Express, EJS and MongoDB. It targets one Linux Docker host with durable filesystem volumes, MongoDB Atlas, Resend email, and Caddy HTTPS. It has not been deployed to a paid host from this workspace. Provider accounts, DNS, credentials and real-data migration require the operator's setup and approval.
 
 ## Architecture and limits
 
-- Caddy exposes ports 80/443 and forwards to the app on the private Docker network. Do not expose app port 8080 or scanner port 3310 to the Internet.
+- Caddy exposes ports 80/443 and forwards to the app on the private Docker network. Do not expose app port 8080 to the Internet.
 - The app uses one Mongoose pool capped at 20 connections and a Mongo-backed session pool capped at 10. Browser requests reuse these pools.
 - `nestly_photos` contains re-encoded WebP photos and thumbnails. `/media` checks publication/owner permissions; it is not an unrestricted static directory.
-- `nestly_documents` contains private authorization documents. They require an authorized owner/admin session, a clean security scan, no-store delivery, sandbox headers and attachment delivery for PDFs.
-- ClamAV signatures persist in `nestly_signatures`. No private documents are sent to third-party scanning sites. The scanner must be reachable and definitions at most 72 hours old for production readiness.
+- `nestly_documents` contains private authorization documents. They require an authorized owner/admin session, no-store delivery, sandbox headers and attachment delivery for PDFs.
 - Uploads: 4 MiB/file, 24 MiB/request, frontend batch target below 23 MiB, 12 photos and 3 documents/property, 2 simultaneous multipart requests globally and 1/account, 100 MiB of attempted request bytes/account/day, 30 upload actions/account/hour, 20 properties/account. Quotas include failed attempts and reset on their fixed UTC window boundaries.
 - Database action limits are persistent and endpoint-specific. Inquiries: 20/account/hour plus 1,200/IP/hour; reports: 10/account/hour plus 600/IP/hour; contact redirects: 120/account/hour plus 2,400/IP/hour. Shared Wi-Fi does not share one 20-action quota. Authentication also has account/email and IP limits; MFA challenges are account-limited.
-- PDF validation runs in a worker with heap and time limits. Parsing and malware scanning do not establish legal authenticity. A human must check issuer, holder, address, expiry, applicable permissions and supporting evidence.
+- PDF validation runs in a worker with heap and time limits. File validation does not establish legal authenticity. A human must check issuer, holder, address, expiry, applicable permissions and supporting evidence.
 - HTML carrying session CSRF fields and private pages use no-store. Images have short private revalidation caching. There is no shared HTML cache or Redis requirement.
 
 ## Hosting choice and external setup
 
-1. Provision a supported Linux x64 VM with Docker Engine and Compose v2. Budget an 8 GiB host for the app, OS and ClamAV; the scanner image documentation recommends 3 GiB minimum and 4 GiB preferred for the scanner alone. A smaller host must be measured under signature reload and upload load before use. Do not buy hosting automatically.
+1. Provision a supported Linux x64 VM with Docker Engine and Compose v2. Measure the host under expected upload and browsing load. Do not buy hosting automatically.
 2. Create a MongoDB Atlas cluster and a dedicated application database named `nestly`. Use a database user scoped to this database. Restrict the Atlas network allowlist to the host's egress IP and explicitly authorized operator IPs. Use the SRV TLS connection string. Never disable certificate or hostname validation and never use `0.0.0.0/0` as a launch shortcut.
 3. Configure a domain and its DNS on the chosen host. Caddy manages HTTPS certificates when the domain resolves correctly and ports 80/443 are reachable. Keep SSH restricted and protect hosting/Atlas accounts with MFA.
 4. Configure Resend, a verified sending domain and the sender mailbox. Apply Resend's SPF/DKIM instructions and an appropriate DMARC policy. Configure the signed webhook at `/webhooks/email` for sent, delivered, bounced, complained and failed events. Set the webhook secret. A provider-accepted message is not guaranteed delivery; only a successful one-time confirmation link verifies account email ownership.
 5. Configure an encrypted, off-host restic repository and a private password file. Keep its keys and the MFA encryption key in an operator-controlled vault. Backups on the same VM are insufficient.
 
-Official references: [ClamAV container requirements](https://docs.clamav.net/manual/Installing/Docker.html), [Resend webhook verification](https://resend.com/docs/webhooks/verify-webhooks-requests), [MongoDB Database Tools](https://www.mongodb.com/try/download/database-tools).
+Official references: [Resend webhook verification](https://resend.com/docs/webhooks/verify-webhooks-requests), [MongoDB Database Tools](https://www.mongodb.com/try/download/database-tools).
 
 ## Environment configuration
 
@@ -37,7 +36,6 @@ Copy `.env.example` to `.env.production` on the host and set mode 600. Do not pu
 | `MFA_ENCRYPTION_KEY` | Required, 32 securely random bytes encoded as base64. Back it up separately; losing it prevents decrypting enrolled TOTP secrets. |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_WEBHOOK_SECRET` | Required for this production configuration. |
 | `UPLOAD_DIR`, `AUTHORIZATION_DIR`, `STORAGE_DURABLE` | Compose supplies distinct durable mounts. Keep them outside `public/` and never mount them as unrestricted proxy/static roots. |
-| `CLAMD_HOST`, `CLAMD_PORT`, `SCAN_MAX_AGE_HOURS` | Private scanner configuration; definition age must remain within 1–72 hours. Compose supplies the hostname. |
 | `MIN_MONTHLY_RENT`, `MAX_MONTHLY_RENT` | Optional business validation bounds. Changing publication rules also requires a publication-policy version change and re-review of existing public records. |
 | `NODE_OPTIONS` | Compose bounds the app's JavaScript heap. Native image memory is additionally bounded through upload concurrency, decoded pixel limits and container memory. |
 
@@ -53,9 +51,7 @@ chmod 600 .env.production
 # Fill the required configuration privately before continuing.
 docker compose config --quiet
 docker compose build
-docker compose up -d scanner
 docker compose ps
-# Wait for scanner health and a successful signature update.
 docker compose run --rm --no-deps app npm run db:indexes
 docker compose run --rm --no-deps app npm run listings:audit
 docker compose up -d app proxy
@@ -68,7 +64,7 @@ curl --fail https://YOUR_DOMAIN/health/ready
 
 `listings:audit` is read-only, uses a cursor, disables automatic index creation and prints only listing IDs, states and validation findings. It does not approve, unpublish, rewrite or delete records. Use a read-only Atlas user when producing the inventory report.
 
-Record the deployed image ID/digests, Node version, configuration revision (without secret values), migration reconciliation and test results. The ClamAV/Caddy image tags track their supported lines; resolve and record approved digests on the actual host before public launch and update them through reviewed maintenance.
+Record the deployed image ID/digests, Node version, configuration revision (without secret values), migration reconciliation and test results. Resolve and record approved Caddy image digests on the actual host before public launch and update them through reviewed maintenance.
 
 ## Existing real data and legacy review
 
@@ -127,10 +123,10 @@ It creates its own MongoDB process and test-only files, performs dump/restore an
 
 ## Monitoring, launch acceptance and rollback
 
-- `/health/live` is session-free liveness. `/health/ready` checks MongoDB ping, volume access and, in production, scanner response/freshness. Responses expose only status. Monitor both through an operator-configured uptime service; no monitoring subscription is configured here.
-- Review structured application errors, container restarts, disk usage, backup freshness, Atlas connection/operation counts, bounced/complained email and scanner update failures. Logs omit bodies, credentials, cookies, tokens and provider error payloads. Set disk and backup-failure alerts on the actual host.
-- Test actual HTTPS cookies, email delivery and link completion, webhook signatures, MFA recovery, a genuine authorization-document review and image uploads in staging. Use the EICAR standard test file only in a dedicated scanner test, never a real owner's record. Do not describe a protocol stub test as a real ClamAV engine scan.
-- Run the 40-student load scenario against an isolated database on the selected host/Atlas tier before launch. The local test excludes TLS, WAN latency and scanner load. Separately test concurrent uploads and a ClamAV signature reload on the host; do not infer VM capacity from workstation results.
+- `/health/live` is session-free liveness. `/health/ready` checks MongoDB ping, and volume access. Responses expose only status. Monitor both through an operator-configured uptime service; no monitoring subscription is configured here.
+- Review structured application errors, container restarts, disk usage, backup freshness, Atlas connection/operation counts, bounced/complained email. Logs omit bodies, credentials, cookies, tokens and provider error payloads. Set disk and backup-failure alerts on the actual host.
+- Test actual HTTPS cookies, email delivery and link completion, webhook signatures, MFA recovery, a genuine authorization-document review and image uploads in staging.
+- Run the 40-student load scenario against an isolated database on the selected host/Atlas tier before launch. The local test excludes TLS and WAN latency. Test concurrent uploads on the host before estimating capacity.
 - Confirm a tested rollback image within the corrected publication/privacy policy. Never roll back to a build that re-exposes revoked consent or legacy unreviewed inventory. No data deletion is part of code rollback. Any database restoration to a real environment needs separate authorization.
 
 Vercel Functions are intentionally unsupported for this filesystem deployment, and production configuration rejects that environment. The chosen VM accepts bounded multipart requests without a serverless request-body limit. A future Vercel deployment requires an object-storage adapter, distinct public/private policies, secure signed direct uploads and a separately tested workflow; it is not implemented or claimed here.

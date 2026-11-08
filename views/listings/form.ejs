@@ -187,7 +187,6 @@
         <article class="authorization-record">
         <h3><%= document.documentType %></h3>
         <p><%= document.issuingAuthority||'Issuer not supplied' %> · <%= document.reference||'Reference not supplied' %></p>
-        <p>Security scan: <strong><%= document.scanStatus||'quarantined' %></strong>. This does not establish authenticity.</p>
         <p>Uploaded <%= date(document.uploadedAt) %> · <strong><%= document.status==='accepted'?'Accepted for this listing review':document.status==='rejected'?'Rejected':'Pending admin review' %></strong></p><a class="outline small" target="_blank" rel="noopener" href="/listings/<%= listing._id %>/authorization/<%= document._id %>"><%= document.mimeType==='application/pdf'?'Download PDF for review':'View document scan' %></a>
         <form method="post" action="/owner/<%= listing._id %>/authorization/<%= document._id %>/delete"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="outline small">Remove document & save pending removal</button></form></article>
         <% } %>
