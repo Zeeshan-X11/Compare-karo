@@ -3,11 +3,11 @@
   <%- include('partials/student-nav',{active:'compare'}) %>
   <header class="student-heading">
     <div><span class="student-kicker">SIDE BY SIDE</span><h1>Your PG comparison</h1><p>A closer look at rent, room options and the details that matter to you.</p></div>
-    <a class="outline" href="/listings"><%= listings.length?'Find another PG':'Explore PGs' %> <%- include('partials/icon',{name:'arrow'}) %></a>
+    <a class="outline" href="/listings"><%= listings.length?'Start a new comparison':'Explore PGs' %> <%- include('partials/icon',{name:'arrow'}) %></a>
   </header>
 
   <div class="student-body">
-    <div class="student-toolbar"><div><h2>Compare your options <span class="student-count"><%= listings.length %> / 3</span></h2><p>Compare up to three published PGs. Use Compare on a property card to add one.</p></div><% if(listings.length){ %><span class="student-guidance"><%- include('partials/icon',{name:'grid'}) %> Scroll across to see every property</span><% } %></div>
+    <div class="student-toolbar"><div><h2>Compare your options <span class="student-count"><%= listings.length %> / 3</span></h2><p>Use Compare on a property card to add up to three PGs. Your selection clears when you leave this page.</p></div><% if(listings.length){ %><span class="student-guidance"><%- include('partials/icon',{name:'grid'}) %> Scroll across to see every property</span><% } %></div>
     <% if(!listings.length){ %>
       <div class="student-empty">
         <span class="empty-orbit" aria-hidden="true"><%- include('partials/icon',{name:'grid'}) %></span>

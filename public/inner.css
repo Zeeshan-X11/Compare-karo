@@ -115,6 +115,7 @@
   transition: opacity .18s ease, transform .18s ease;
 }
 .save-notice.is-visible { opacity: 1; transform: translateY(0); }
+.save-notice a { color: inherit; text-decoration: underline; pointer-events: auto; }
 @media (prefers-reduced-motion: reduce) { .save-notice { transition: none; } }
 .directory-address { display: flex; gap: 7px; font-size: 12px; color: #53647c; margin: 0 0 8px; }
 .directory-address .ui-icon { width: 15px; height: 15px; flex-shrink: 0; margin-top: 3px; }
@@ -294,31 +295,30 @@
 .student-page .card-tools button { min-height: 34px; font-size: 11px; padding: 7px 11px; }
 .student-page .detail-link { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #205ad2; padding-top: 3px; }
 .property-breadcrumb { display: flex; align-items: center; gap: 8px; color: #60728c; font-size: 12px; margin-bottom: 24px; }
-.property-heading { display: flex; justify-content: space-between; gap: 26px; align-items: center; padding: clamp(20px,4vw,48px); margin-bottom: 14px; border-radius: 24px; background: #111f37; color: #fff; }
-.property-heading-copy > .eyebrow { color: #a9c7ff; }
-.property-heading .property-location { color: #d4dfef; }
-.property-heading .property-heading-actions .outline { background: #203455; color: #fff; border-color: #547198; }
-.property-heading .property-heading-actions .quiet { color: #d7e6ff; }
+.property-hero { display: grid; grid-template-columns: minmax(0,1.8fr) minmax(300px,1fr); align-items: start; gap: clamp(18px,3vw,38px); margin-bottom: 24px; }
+.property-heading { min-width: 0; padding: clamp(20px,2.6vw,32px); border: 1px solid #e0e6ef; border-radius: 22px; background: #fff; box-shadow: 0 12px 36px #18365d0e; }
 .property-heading-copy { min-width: 0; }
-.property-heading h1 { color: inherit; font-size: clamp(30px,4vw,48px); letter-spacing: -.035em; line-height: 1.12; margin: 0 0 12px; overflow-wrap: anywhere; }
+.property-heading h1 { font-size: clamp(25px,2.7vw,38px); letter-spacing: -.035em; line-height: 1.12; margin: 0 0 12px; overflow-wrap: anywhere; }
 .property-location { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #627088; }
 .property-location .ui-icon { width: 16px; height: 16px; }
 .property-heading-actions { margin: 18px 0 0; }
-.property-summary-price { min-width: 230px; padding: 18px 22px; border: 1px solid #dce6f5; border-radius: 14px; background: #fff; text-align: left; box-shadow: 0 8px 24px #18365d0d; }
+.property-summary-price { margin: 20px 0 14px; padding-top: 17px; border-top: 1px solid #e6edf6; }
 .property-price-label { display: block; font-size: 12px; color: #526c91; }
 .property-rent { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
 .property-summary-price .price { font-size: 34px; color: #152c4e; line-height: 1.2; margin: 6px 0 3px; }
 .property-price-period { font-size: 11px; color: #526c91; }
 .property-summary-price .price-caption { font-size: 11px; color: #526c91; margin: 4px 0 12px; }
 .property-rent-link { display: inline-flex; gap: 6px; font-size: 12px; font-weight: 650; color: #205ad2; }
-.property-hero-links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.property-hero-links a:first-child { padding: 7px 10px; border-radius: 7px; background: #eaf1ff; }
+.property-hero-links { display: grid; justify-items: start; gap: 6px; margin-top: 14px; }
+.property-hero-links .button { width: 100%; justify-content: center; gap: 8px; }
 .property-hero-links a { align-items: center; min-height: 36px; }
+.property-hero-deposit { font-size: 13px; color: #526c91; margin: 0; }
+.property-map-link { display: block; margin-top: 12px; padding: 13px 15px; border-radius: 10px; background: #edf4ff; font-size: 13px; font-weight: 600; color: #205ad2; }
 .property-at-a-glance { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,170px),1fr)); gap: 10px; margin: 0 0 18px; }
 .property-at-a-glance > div { min-width: 0; padding: 14px 18px; border: 1px solid #e0e6ef; border-radius: 12px; background: #fff; }
 .property-at-a-glance dt { color: #526c91; font-size: 12px; }
 .property-at-a-glance dd { margin: 4px 0 0; font-weight: 650; overflow-wrap: anywhere; }
-.property-media { background: #fff; padding: 18px; border: 1px solid #e0e6ef; border-radius: 12px; margin-bottom: 26px; }
+.property-media { min-width: 0; }
 .property-media-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .property-media-heading h2 { font-size: 20px; letter-spacing: -.02em; margin: 0 0 3px; }
 .property-media-heading p { font-size: 11px; color: #637188; margin: 0; }
@@ -334,6 +334,15 @@
 .property-page .property-gallery img { display: block; width: 100%; height: 100%; aspect-ratio: 1.8; object-fit: cover; }
 .property-page .property-gallery-single img { height: clamp(200px,40vw,450px); }
 .property-page .property-gallery figcaption { position: absolute; bottom: 8px; left: 8px; pointer-events: none; font-size: 11px; padding: 5px 9px; color: #fff; background: #152238e6; border-radius: 6px; }
+.property-page .property-gallery-preview .property-extra-photo { display: none; }
+.property-more-photos { display: none; }
+.property-gallery-preview .property-more-photos { position: absolute; inset: 0; display: grid; place-items: center; background: #101c35aa; color: #fff; font-size: clamp(13px,2vw,24px); font-weight: 700; }
+.property-gallery-preview figure:has(.property-more-photos) figcaption { display: none; }
+@media (min-width: 801px) {
+  .property-page .property-gallery-mosaic.property-gallery-preview { grid-template-columns: minmax(0,3fr) minmax(0,1fr); height: clamp(320px,38vw,520px); grid-auto-rows: minmax(0,1fr); }
+  .property-page .property-gallery-mosaic.property-gallery-preview figure:first-child { grid-column: 1; grid-row: span 2; }
+  .property-page .property-gallery-mosaic.property-gallery-preview:has(figure:nth-child(4)) figure:first-child { grid-row: span 3; }
+}
 .property-tabs { display: flex; align-items: center; gap: 30px; border-bottom: 1px solid #dde4ef; margin-bottom: 26px; overflow-x: auto; }
 .property-tabs a { padding: 12px 0 15px; font-size: 13px; font-weight: 600; white-space: nowrap; color: #516b8e; }
 .property-tabs a:first-child { color: #2563eb; border-bottom: 2px solid #2563eb; }
@@ -360,7 +369,7 @@
 .move-in-controls .outline { min-height: 40px; }
 .property-page .cost-breakdown { font-size: 12px; background: #f7f9fd; padding: 18px; border-radius: 8px; }
 .amenity-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 20px; padding: 0; list-style: none; }
-.amenity-list li { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #425b7c; }
+.amenity-list li { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 20px; background: #edf4ff; font-size: 13px; color: #304d75; }
 .amenity-list .ui-icon { width: 17px; height: 17px; padding: 2px; color: #3a7a5d; background: #eaf5ef; border-radius: 4px; }
 .property-extras { border-top: 1px solid #edf0f5; margin-top: 24px; }
 .location-card { display: flex; align-items: flex-start; gap: 16px; background: #f4f7fc; padding: 20px; border: 1px solid #e4ebf6; border-radius: 9px; }
@@ -399,6 +408,7 @@
   .property-page .property-section,.property-page .contact-panel { padding: 22px; }
 }
 @media(max-width:800px) {
+  .property-hero { grid-template-columns: minmax(0,1fr); }
   .student-page { padding-inline: 22px; }
   .search-workspace { grid-template-columns: 1fr; gap: 18px; }
   .search-sidebar { width: 100%; }
@@ -466,15 +476,13 @@
   .student-page .card-body { padding: 20px; }
   .student-page .card-tools button { min-height: 40px; }
   .property-breadcrumb { margin-bottom: 20px; font-size: 11px; }
-  .property-heading { flex-direction: column; align-items: stretch; gap: 20px; border-radius: 17px; }
+  .property-heading { border-radius: 17px; }
   .property-heading h1 { font-size: 28px; }
   .property-location { font-size: 12px; }
   .property-heading-actions { gap: 8px; }
   .property-heading-actions .outline { font-size: 11px; min-height: 40px; padding: 8px 12px; }
   .property-heading-actions .quiet { font-size: 11px; }
-  .property-summary-price { width: 100%; min-width: 0; text-align: left; padding: 16px 18px; }
   .property-summary-price .price { font-size: 28px; }
-  .property-media { padding: 12px; margin-bottom: 18px; }
   .property-media-heading p { font-size: 10px; }
   .property-photo-count { font-size: 10px; }
   .property-page .property-gallery { gap: 8px; }

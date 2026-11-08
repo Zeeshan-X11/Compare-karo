@@ -35,13 +35,14 @@
         <div class="directory-actions">
           <a class="button small" href="<%= href %>" aria-label="View details for <%= listing.name %>">View listing ↗</a>
           <% if(!user || user.role === 'user'){ %>
-            <form method="post" action="/compare/<%= id %>">
+            <form method="post" action="/compare/<%= id %>" data-compare-pg="<%= listing.name %>">
               <input type="hidden" name="_csrf" value="<%= csrf %>">
               <input type="hidden" name="action" value="<%= compared ? 'remove' : 'add' %>">
-              <button class="outline small" type="submit" aria-label="<%= compared ? 'Remove ' + listing.name + ' from comparison' : 'Compare ' + listing.name %>"><%= compared ? 'Compared' : 'Compare' %></button>
+              <input type="hidden" name="returnTo" value="<%= typeof ownerSaveReturn === 'undefined' ? '/listings' : ownerSaveReturn %>">
+              <button class="outline small" type="submit" aria-label="<%= compared ? 'Remove ' + listing.name + ' from comparison' : 'Compare ' + listing.name %>"><span data-compare-label><%= compared ? 'Compared' : 'Compare' %></span></button>
             </form>
             <% if(user){ %>
-              <form method="post" action="/favorites/<%= id %>">
+              <form method="post" action="/favorites/<%= id %>" <% if(typeof ownerSaveReturn === 'undefined' || ownerSaveReturn !== '/favorites'){ %>data-save-pg="<%= listing.name %>"<% } %>>
                 <input type="hidden" name="_csrf" value="<%= csrf %>">
                 <input type="hidden" name="action" value="<%= saved ? 'remove' : 'add' %>">
                 <input type="hidden" name="returnTo" value="<%= typeof ownerSaveReturn === 'undefined' ? '/listings' : ownerSaveReturn %>">

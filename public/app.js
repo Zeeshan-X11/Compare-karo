@@ -9,27 +9,42 @@ for (const photo of document.querySelectorAll('.directory-photo img')) {
   photo.addEventListener('error', removeUnavailablePhoto, { once: true });
   if (photo.complete && !photo.naturalWidth) removeUnavailablePhoto();
 }
-const saveForms = document.querySelectorAll('form[data-save-pg]');
-if (saveForms.length) {
+const pgActionForms = document.querySelectorAll('form[data-save-pg], form[data-compare-pg]');
+if (pgActionForms.length || document.querySelector('.compare-page')) {
+  // A browser Back restore can bypass the server's comparison reset.
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) location.reload();
+  });
+}
+if (pgActionForms.length) {
   const notice = document.createElement('div');
   notice.className = 'save-notice';
   notice.setAttribute('role', 'status');
   document.body.append(notice);
   let noticeTimer;
+  let comparisonRequests = Promise.resolve();
 
-  function showSaveNotice(message) {
+  function showSaveNotice(message, openComparison = false) {
     clearTimeout(noticeTimer);
     notice.textContent = message;
+    if (openComparison) {
+      const link = document.createElement('a');
+      link.href = '/compare';
+      link.textContent = 'View comparison';
+      notice.append(' ', link);
+    }
     notice.classList.add('is-visible');
     noticeTimer = setTimeout(() => {
       notice.classList.remove('is-visible');
       notice.textContent = '';
-    }, 2800);
+    }, openComparison ? 6000 : 2800);
   }
 
-  for (const form of saveForms) {
+  for (const form of pgActionForms) {
+    const comparing = form.hasAttribute('data-compare-pg');
+    const name = comparing ? form.dataset.comparePg : form.dataset.savePg;
     const button = form.querySelector('button');
-    const label = button.querySelector('[data-save-label]');
+    const label = button.querySelector(comparing ? '[data-compare-label]' : '[data-save-label]');
     const action = form.elements.namedItem('action');
     let pending = false;
     form.addEventListener('submit', async event => {
@@ -38,33 +53,49 @@ if (saveForms.length) {
       pending = true;
       button.setAttribute('aria-busy', 'true');
       try {
-        const response = await fetch(form.action, {
+        const send = () => fetch(form.action, {
           method: 'POST',
           headers: { Accept: 'application/json' },
           body: new URLSearchParams(new FormData(form)),
         });
+        const response = await (comparing
+          ? (comparisonRequests = comparisonRequests.catch(() => undefined).then(send))
+          : send());
         if (response.redirected && new URL(response.url).pathname === '/login') {
           showSaveNotice('Your session ended. Log in to save PGs.');
           return;
         }
-        if (!response.ok) throw Error('Save request failed');
+        if (comparing && response.status === 400) {
+          showSaveNotice('You can compare up to three PGs. Remove one to add another.', true);
+          return;
+        }
+        if (!response.ok) throw Error('PG action failed');
+        if (comparing) {
+          const { compared } = await response.json();
+          if (typeof compared !== 'boolean') throw Error('Unexpected comparison response');
+          action.value = compared ? 'remove' : 'add';
+          label.textContent = compared ? 'Compared' : 'Compare';
+          button.setAttribute('aria-label', compared ? 'Remove ' + name + ' from comparison' : 'Compare ' + name);
+          showSaveNotice(compared ? 'Added to comparison.' : 'Removed from comparison.', compared);
+          return;
+        }
         const { saved } = await response.json();
         if (typeof saved !== 'boolean') throw Error('Unexpected save response');
         action.value = saved ? 'remove' : 'add';
         button.dataset.saved = String(saved);
-        label.textContent = saved ? 'Saved' : 'Save PG';
+        if (label) label.textContent = saved ? 'Saved' : 'Save PG';
         button.setAttribute('aria-label', saved
-          ? 'Remove ' + form.dataset.savePg + ' from saved PGs'
-          : 'Save ' + form.dataset.savePg);
+          ? 'Remove ' + name + ' from saved PGs'
+          : 'Save ' + name);
         if (saved && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          button.querySelector('.ui-icon').animate(
+          button.querySelector('.ui-icon')?.animate?.(
             [{ transform: 'scale(.86)' }, { transform: 'scale(1.34)' }, { transform: 'scale(1)' }],
             { duration: 320, easing: 'cubic-bezier(.2,.75,.3,1)' },
           );
         }
         showSaveNotice(saved ? 'Added to Saved PGs' : 'Removed from Saved PGs');
       } catch {
-        showSaveNotice('Couldn’t update Saved PGs. Try again.');
+        showSaveNotice(comparing ? 'Couldn’t update the comparison. Try again.' : 'Couldn’t update Saved PGs. Try again.');
       } finally {
         pending = false;
         button.removeAttribute('aria-busy');
@@ -250,6 +281,9 @@ for (const form of document.querySelectorAll(".property-upload,.upload-form"))
 const viewer = document.querySelector(".photo-viewer");
 const photos = [...document.querySelectorAll(".gallery-photo")];
 if (viewer && photos.length) {
+  if (typeof viewer.showModal === "function") {
+    photos[0].closest(".property-gallery")?.classList.add("property-gallery-preview");
+  }
   let current = 0;
   const display = (index) => {
     current = (index + photos.length) % photos.length;
@@ -263,6 +297,7 @@ if (viewer && photos.length) {
   };
   photos.forEach((photo, index) =>
     photo.addEventListener("click", (event) => {
+      if (typeof viewer.showModal !== "function") return;
       event.preventDefault();
       display(index);
       viewer.showModal();

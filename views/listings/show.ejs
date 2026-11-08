@@ -40,17 +40,19 @@
         <h1><%= listing.name %></h1>
         <% if(!user||user.role==='user'){ %><div class="actions listing-actions property-heading-actions">
           <% if(user){ %>
-            <form method="post" action="/favorites/<%= listing._id %>">
+            <% const saved = favoriteIds.has(String(listing._id)); %>
+            <form method="post" action="/favorites/<%= listing._id %>" data-save-pg="<%= listing.name %>">
               <input type="hidden" name="_csrf" value="<%= csrf %>">
-              <input type="hidden" name="action" value="<%= favoriteIds.has(String(listing._id))?'remove':'add' %>">
+              <input type="hidden" name="action" value="<%= saved?'remove':'add' %>">
               <input type="hidden" name="returnTo" value="/listings/<%= listing._id %>">
-              <button class="outline small"><%= favoriteIds.has(String(listing._id))?'♥ Saved PG':'♡ Save PG' %></button>
+              <button class="outline small directory-save" data-saved="<%= saved %>" aria-label="<%= saved ? 'Remove ' + listing.name + ' from saved PGs' : 'Save ' + listing.name %>"><%- include('../partials/icon', { name: 'heart' }) %> <span data-save-label><%= saved?'Saved':'Save PG' %></span></button>
             </form>
           <% } %>
-          <form method="post" action="/compare/<%= listing._id %>">
+          <form method="post" action="/compare/<%= listing._id %>" data-compare-pg="<%= listing.name %>">
             <input type="hidden" name="_csrf" value="<%= csrf %>">
             <input type="hidden" name="action" value="<%= compareIds.has(String(listing._id))?'remove':'add' %>">
-            <button class="outline small"><%= compareIds.has(String(listing._id))?'Remove from comparison':'Compare this PG +' %></button>
+            <input type="hidden" name="returnTo" value="/listings/<%= listing._id %>">
+            <button class="outline small"><span data-compare-label><%= compareIds.has(String(listing._id))?'Compared':'Compare' %></span></button>
           </form>
           <a class="quiet" href="/compare">View comparison →</a>
         </div><% } %>

@@ -72,6 +72,7 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
             "You can save up to 100 PGs. Remove one before saving another.",
           );
       }
+      if (req.accepts(["html", "json"]) === "json") return res.json({ saved: req.body.action === "add" });
       res.redirect(safeReturn(req.body.returnTo, "/favorites"));
     }),
   );
@@ -114,6 +115,7 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
         3,
       );
       req.session.comparison=listings.map(l=>String(l._id));
+      if (req.method === "GET") req.session.comparisonViewed = listings.length > 0;
       res.locals.compareIds=new Set(req.session.comparison);
       res.render("compare", { listings });
     }),
@@ -137,6 +139,8 @@ function registerPortalRoutes({ app, auth, role, wrap, actionLimit, owned }) {
         }
         req.session.comparison = ids;
       } else throw problem(400,"Choose add or remove.");
+      if (req.accepts(["html", "json"]) === "json")
+        return res.json({ compared: req.body.action === "add" });
       res.redirect(safeReturn(req.body.returnTo, "/compare"));
     }),
   );

@@ -169,6 +169,13 @@ function createApp(options = {}) {
       if(req.user && (req.user.sessionVersion||0)!==(req.session.sessionVersion||0)){req.session.userId=null;req.user=null;}
       res.locals.favoriteIds = new Set((req.user?.favorites || []).map(String));
       res.locals.directoryFavoriteIds = new Set((req.user?.directoryFavorites || []).map(String));
+      const destination = req.get("sec-fetch-dest");
+      const documentNavigation = destination ? destination === "document" : req.accepts(["html"]) === "html";
+      if (req.session.comparisonViewed && req.method === "GET" && documentNavigation &&
+          !/^\/compare\/?$/i.test(req.path)) {
+        delete req.session.comparison;
+        delete req.session.comparisonViewed;
+      }
       res.locals.compareIds = new Set(
         (req.session.comparison || []).map(String),
       );
